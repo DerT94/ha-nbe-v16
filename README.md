@@ -21,17 +21,16 @@ Home Assistant receives the data, decodes the Z-values and exposes them as senso
 
 ## Current Repository Status
 
+
 | File | Status |
 |---|---|
-| `README.md` | ✅ WIP notice, description |
-| `.gitignore` | ✅ Python + HA rules |
-| `manifest.json` | ⏳ Empty |
-| `__init__.py` | ⏳ Empty |
-| `const.py` | ⏳ Empty |
-| `sensor.py` | ⏳ Empty |
-| `strings.json` | ⏳ Empty |
-| `translations/de.json` | ⏳ Empty |
-| `translations/en.json` | ⏳ Empty |
+| `manifest.json` | ✅ Done |
+| `__init__.py` | ✅ Done |
+| `const.py` | ⏳ Pending |
+| `sensor.py` | ⏳ Pending |
+| `strings.json` | ⏳ Pending |
+| `translations/de.json` | ⏳ Pending |
+| `translations/en.json` | ⏳ Pending |
 
 ## Open Tasks
 
