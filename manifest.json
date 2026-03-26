@@ -1,0 +1,12 @@
+{
+  "domain": "nbe_v16",
+  "name": "NBE V16 Pellet Boiler",
+  "version": "0.1.0",
+  "config_flow": false,
+  "documentation": "https://github.com/DerT94/ha-nbe-v16",
+  "issue_tracker": "https://github.com/DerT94/ha-nbe-v16/issues",
+  "requirements": [],
+  "dependencies": [],
+  "codeowners": ["@DerT94"],
+  "iot_class": "local_push"
+}
