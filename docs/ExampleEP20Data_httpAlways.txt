@@ -1,0 +1,45 @@
+Example Data
+EP20 Config:
+Protocol: http
+Connection Mode: Always
+
+[2026-04-02 14:08:53] Neue Verbindung
+  Von: 192.168.1.100:5822
+
+  Empfangene Daten:
+    POST /nbe/ep20/ HTTP/1.0
+    Content-Length:249
+    
+    GET /v16dev/setup.php?mac=XXXXX&data=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX&ver=160000.180&ctrl=5&wd=1&wa=0&ws=0&wm=0&wk=0 HTTP/1.1
+Host: stokercloud.dk
+
+???
+
+  Verbindung sauber geschlossen.
+  Warte auf naechste Verbindung...
+
+----------------------------------------
+[2026-04-02 14:09:25] Neue Verbindung
+  Von: 192.168.1.100:5054
+
+  Empfangene Daten:
+    POST /nbe/ep20/ HTTP/1.0
+    Content-Length:1009
+    
+    GET /v16dev/opr.php?mac=XXXXX&data=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX&ver=160000.180&ctrl=5&z00=0&z01=0&z02=489&z03=295&z04=558&z05=205&z10=24&z11=9999&z12=9999&z13=0&z14=0&z
+16=0&z18=44&z19=0&z21=0&z22=0&z24=0&z25=700&z28=0&z29=100&z31=9999&z32=9999&z33=9999&z34=9999&z40=224&z41=0&z42=0&z43=0&z44=0&z45=0&z46=9999&z47=1&z48=0&z49=0&z50=489&z51=700&z54=0&z55=0&z56=0&z57=0&z59=0&z60=489&z70=205&z71=0&z82=7600&z83=12500&z84=15900&z87=246&z88=602&
+z89=0&z91=0&z96=0&z97=0&z99=0&z101=69&z102=0&z103=0&z104=99&z105=0&z106=0&z107=0&z108=100&z111=4559&z115=50&z119=0&z120=0&z121=0&z122=9990&z123=5&z124=120&z127=0&z128=9999&z129=10&z130=0&z131=0&z132=0&z133=0&z134=0&z135=0&z136=0&z137=0&z138=0&z139=0&z140=0&z141=0&z142=0&z
+143=0&z144=0&z145=0&z146=0&z147=0&z148=0&z149=0&z150=0&z151=0&z152=0&z153=0&z158=127&z159=8815&z160=1391&z161=0&z162=100&z163=229&z164=134&z165=13&z166=0&z167=0 HTTP/1.1
+Host: stokercloud.dk
+
+???
+
+  Verbindung sauber geschlossen.
+  Warte auf naechste Verbindung...
+
+----------------------------------------
+[2026-04-02 14:09:33] Neue Verbindung
+  Von: 192.168.1.100:5129
+
+  Empfangene Daten:
+Listener gestoppt.

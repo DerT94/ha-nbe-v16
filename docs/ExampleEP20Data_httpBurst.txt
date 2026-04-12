@@ -1,0 +1,11 @@
+Example Data
+EP20 Config:
+Protocol: http
+Connection Mode: Burst
+Stop Serial ???
+
+Note:
+No data could be captured in Burst mode.
+The EP20 connects, waits for a server response before sending any data (challenge-response pattern).
+Since we do not know what initial response the EP20 expects, it sends 0 bytes and disconnects.
+Burst mode is not supported by this integration. Always mode is used instead.

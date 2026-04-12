@@ -1,0 +1,26 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "NBE V16 Pelletkessel einrichten",
+        "description": "Gib den URL-Suffix für den EP20-Endpoint ein. Das Präfix '/nbe/' ist fest, die vollständige URL lautet dann: http://[HA-IP]:8123/nbe/[dein-suffix]/\n\nDokumentation: {documentation_url}",
+        "data": {
+          "url_suffix": "URL-Suffix"
+        },
+        "data_description": {
+          "url_suffix": "Nur den Suffix eingeben, z.B. 'boiler1'. Das Präfix '/nbe/' ist fest vorgegeben."
+        }
+      },
+      "instructions": {
+        "title": "EP20-Modul konfigurieren",
+        "description": "Lege im EP20-Webinterface eine neue Verbindung mit folgenden Einstellungen an:\n\n**Basic Settings**\n- Protocol: `Http`\n\n**Socket Settings**\n- Server: `[HA-IP]`\n- Server Port: `8123`\n\n**Protocol Settings**\n- Connect Mode: `Burst`\n- Stop Serial: `???`\n- Method: `POST`\n- Version: `HTTP/1.0`\n- Path: `{url_path}`\n\nKlicke im EP20-Interface auf **Submit**, dann hier auf **Absenden**."
+      }
+    },
+    "error": {
+      "url_suffix_required": "Bitte einen URL-Suffix eingeben."
+    },
+    "abort": {
+      "already_configured": "Dieser Kessel ist bereits konfiguriert."
+    }
+  }
+}

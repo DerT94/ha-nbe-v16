@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.venv/
+env/
+
+# Home Assistant
+*.log
+.storage/
+secrets.yaml
+home-assistant_v2.db
+home-assistant_v2.db-shm
+home-assistant_v2.db-wal
+.cloud/
+.google.token
+ip_bans.yaml
+
+# Editor / IDE
+.vscode/
+*.swp
+*.swo
+.DS_Store
+.idea/
+
+# Testing & Dev
+.pytest_cache/
+htmlcov/
+.coverage
+.tox/
+.mypy_cache/
+
+#AI
+.continue/
+.continueignore

@@ -1,101 +1,92 @@
-"""Sample API Client."""
+"""EP20 HTTP view and payload parser for nbe_v16."""
 
 from __future__ import annotations
 
-import socket
-from typing import Any
+from typing import TYPE_CHECKING, Any
+from urllib.parse import parse_qs, urlparse
 
-import aiohttp
-import async_timeout
+from aiohttp import web
+from homeassistant.components.http import HomeAssistantView
 
+from .const import DOMAIN, LOGGER
 
-class IntegrationBlueprintApiClientError(Exception):
-    """Exception to indicate a general API error."""
+if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant
 
-
-class IntegrationBlueprintApiClientCommunicationError(
-    IntegrationBlueprintApiClientError,
-):
-    """Exception to indicate a communication error."""
+    from .coordinator import NbeDataUpdateCoordinator
 
 
-class IntegrationBlueprintApiClientAuthenticationError(
-    IntegrationBlueprintApiClientError,
-):
-    """Exception to indicate an authentication error."""
+class EP20View(HomeAssistantView):
+    """Receives HTTP POST requests from the NBE EP20 module.
 
+    Each config entry registers its own instance with a unique URL
+    and unique view name derived from the entry ID.
+    """
 
-def _verify_response_or_raise(response: aiohttp.ClientResponse) -> None:
-    """Verify that the response is valid."""
-    if response.status in (401, 403):
-        msg = "Invalid credentials"
-        raise IntegrationBlueprintApiClientAuthenticationError(
-            msg,
-        )
-    response.raise_for_status()
-
-
-class IntegrationBlueprintApiClient:
-    """Sample API Client."""
+    requires_auth = False
 
     def __init__(
         self,
-        username: str,
-        password: str,
-        session: aiohttp.ClientSession,
-    ) -> None:
-        """Sample API Client."""
-        self._username = username
-        self._password = password
-        self._session = session
-
-    async def async_get_data(self) -> Any:
-        """Get data from the API."""
-        return await self._api_wrapper(
-            method="get",
-            url="https://jsonplaceholder.typicode.com/posts/1",
-        )
-
-    async def async_set_title(self, value: str) -> Any:
-        """Get data from the API."""
-        return await self._api_wrapper(
-            method="patch",
-            url="https://jsonplaceholder.typicode.com/posts/1",
-            data={"title": value},
-            headers={"Content-type": "application/json; charset=UTF-8"},
-        )
-
-    async def _api_wrapper(
-        self,
-        method: str,
         url: str,
-        data: dict | None = None,
-        headers: dict | None = None,
-    ) -> Any:
-        """Get information from the API."""
-        try:
-            async with async_timeout.timeout(10):
-                response = await self._session.request(
-                    method=method,
-                    url=url,
-                    headers=headers,
-                    json=data,
-                )
-                _verify_response_or_raise(response)
-                return await response.json()
+        entry_id: str,
+        coordinator: NbeDataUpdateCoordinator,
+    ) -> None:
+        """Initialize the view with a unique URL path and entry ID."""
+        self.url = url
+        self.name = f"{DOMAIN}:ep20:{entry_id}"
+        self.coordinator = coordinator
 
-        except TimeoutError as exception:
-            msg = f"Timeout error fetching information - {exception}"
-            raise IntegrationBlueprintApiClientCommunicationError(
-                msg,
-            ) from exception
-        except (aiohttp.ClientError, socket.gaierror) as exception:
-            msg = f"Error fetching information - {exception}"
-            raise IntegrationBlueprintApiClientCommunicationError(
-                msg,
-            ) from exception
-        except Exception as exception:  # pylint: disable=broad-except
-            msg = f"Something really wrong happened! - {exception}"
-            raise IntegrationBlueprintApiClientError(
-                msg,
-            ) from exception
+    async def post(self, request: web.Request) -> web.Response:
+        """Handle POST request from the EP20 module."""
+        body = await request.text()
+
+        LOGGER.debug(
+            "NBE V16: POST from %s received\n--- body start ---\n%s\n--- body end ---",
+            request.remote,
+            body,
+        )
+
+        # Body may contain multiple blocks separated by '???'
+        for block in body.split("???"):
+            block = block.strip()
+            if not block:
+                continue
+            first_line = block.splitlines()[0].strip()
+            if "/v16dev/opr.php" in first_line:
+                await self._parse_and_process_opr(first_line)
+            elif "/v16dev/setup.php" in first_line:
+                LOGGER.debug("NBE V16: setup.php received – ignored")
+            else:
+                LOGGER.debug("NBE V16: unknown block: %s", first_line)
+
+        # EP20 expects a clean 200 OK, otherwise it will retry
+        return web.Response(text="OK", status=200)
+
+    async def _parse_and_process_opr(self, line: str) -> None:
+        """Parse Z-values from an opr.php GET line and update coordinator.
+
+        Example line:
+        GET /v16dev/opr.php?mac=65506&z00=0&z01=0&z02=502 HTTP/1.1
+        """
+        parts = line.split(" ")
+        if len(parts) < 2:
+            LOGGER.warning("NBE V16: invalid GET line: %s", line)
+            return
+
+        params = parse_qs(urlparse(parts[1]).query)
+
+        payload: dict[str, str] = {
+            key: values[0]
+            for key, values in params.items()
+            if key.startswith("z") or key == "mac"
+        }
+
+        if not payload:
+            LOGGER.warning("NBE V16: no Z-values found in GET line: %s", line)
+            return
+
+        # Push data to coordinator – sensors will update automatically
+        self.coordinator.async_set_updated_data(payload)
+
+        z_count = sum(1 for k in payload if k.startswith("z"))
+        LOGGER.info("NBE V16: opr.php parsed – %d Z-values processed", z_count)

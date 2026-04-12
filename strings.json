@@ -1,0 +1,26 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up NBE V16 Pellet Boiler",
+        "description": "Enter the URL suffix for the EP20 endpoint. The prefix '/nbe/' is fixed, so the full URL will be: http://[HA-IP]:8123/nbe/[your-suffix]/\n\nDocumentation: {documentation_url}",
+        "data": {
+          "url_suffix": "URL Suffix"
+        },
+        "data_description": {
+          "url_suffix": "Suffix only, e.g. 'boiler1'. The prefix '/nbe/' is fixed."
+        }
+      },
+      "instructions": {
+        "title": "Configure the EP20 Module",
+        "description": "In the EP20 web interface, create a new connection with the following settings:\n\n**Basic Settings**\n- Protocol: `Http`\n\n**Socket Settings**\n- Server: `[HA-IP]`\n- Server Port: `8123`\n\n**Protocol Settings**\n- Connect Mode: `Burst`\n- Stop Serial: `???`\n- Method: `POST`\n- Version: `HTTP/1.0`\n- Path: `{url_path}`\n\nClick **Submit** in the EP20 interface, then **Submit** here to finish setup."
+      }
+    },
+    "error": {
+      "url_suffix_required": "Please enter a URL suffix."
+    },
+    "abort": {
+      "already_configured": "This boiler is already configured."
+    }
+  }
+}
