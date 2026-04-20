@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
+
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.helpers import selector
-from homeassistant.loader import async_get_loaded_integration
 
-from .const import CONF_URL_SUFFIX, DEFAULT_URL_SUFFIX, DOMAIN, LOGGER, NBE_PATH_PREFIX
+from .const import CONF_HOST, CONF_PORT, DEFAULT_PORT, DOMAIN, LOGGER
 
 
 class NbeV16ConfigFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
@@ -15,72 +16,67 @@ class NbeV16ConfigFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
-    def __init__(self) -> None:
-        """Initialize config flow."""
-        self._url_suffix: str = DEFAULT_URL_SUFFIX
-
     async def async_step_user(
         self,
         user_input: dict | None = None,
     ) -> config_entries.ConfigFlowResult:
-        """Step 1: Enter URL suffix."""
-        _errors: dict[str, str] = {}
-
-        integration = async_get_loaded_integration(self.hass, DOMAIN)
-        assert integration.documentation is not None, (  # noqa: S101
-            "Integration documentation URL is not set in manifest.json"
-        )
+        """Enter IP address and TCP port of the EP20 module."""
+        errors: dict[str, str] = {}
 
         if user_input is not None:
-            url_suffix = user_input[CONF_URL_SUFFIX].strip()
-            if not url_suffix:
-                _errors[CONF_URL_SUFFIX] = "url_suffix_required"
+            host: str = user_input[CONF_HOST].strip()
+            port: int = int(user_input[CONF_PORT])
+
+            if not host:
+                errors[CONF_HOST] = "host_required"
             else:
-                self._url_suffix = url_suffix
-                await self.async_set_unique_id(f"nbe_v16_{url_suffix}")
-                self._abort_if_unique_id_configured()
-                return await self.async_step_instructions()
+                try:
+                    reader, writer = await asyncio.wait_for(
+                        asyncio.open_connection(host, port),
+                        timeout=5.0,
+                    )
+                    writer.close()
+                    await writer.wait_closed()
+                except TimeoutError:
+                    errors["base"] = "cannot_connect"
+                except OSError:
+                    errors["base"] = "cannot_connect"
+                else:
+                    unique_id = f"nbe_v16_{host}_{port}"
+                    await self.async_set_unique_id(unique_id)
+                    self._abort_if_unique_id_configured()
+
+                    LOGGER.debug(
+                        "NBE V16: config entry created for %s:%s", host, port
+                    )
+                    return self.async_create_entry(
+                        title=f"NBE V16 Boiler ({host})",
+                        data={CONF_HOST: host, CONF_PORT: port},
+                    )
 
         return self.async_show_form(
             step_id="user",
-            description_placeholders={
-                "documentation_url": integration.documentation,
-            },
             data_schema=vol.Schema(
                 {
                     vol.Required(
-                        CONF_URL_SUFFIX,
-                        default=(user_input or {}).get(CONF_URL_SUFFIX, DEFAULT_URL_SUFFIX),
+                        CONF_HOST,
+                        default=(user_input or {}).get(CONF_HOST, ""),
                     ): selector.TextSelector(
                         selector.TextSelectorConfig(
                             type=selector.TextSelectorType.TEXT,
                         ),
                     ),
+                    vol.Required(
+                        CONF_PORT,
+                        default=(user_input or {}).get(CONF_PORT, DEFAULT_PORT),
+                    ): selector.NumberSelector(
+                        selector.NumberSelectorConfig(
+                            min=1,
+                            max=65535,
+                            mode=selector.NumberSelectorMode.BOX,
+                        ),
+                    ),
                 }
             ),
-            errors=_errors,
-        )
-
-    async def async_step_instructions(
-        self,
-        user_input: dict | None = None,
-    ) -> config_entries.ConfigFlowResult:
-        """Step 2: Show EP20 configuration instructions, then finish."""
-        if user_input is not None:
-            LOGGER.debug(
-                "NBE V16: config entry created for suffix '%s'", self._url_suffix
-            )
-            return self.async_create_entry(
-                title=f"NBE V16 Boiler ({self._url_suffix})",
-                data={CONF_URL_SUFFIX: self._url_suffix},
-            )
-
-        url_path = f"{NBE_PATH_PREFIX}{self._url_suffix}/"
-
-        return self.async_show_form(
-            step_id="instructions",
-            description_placeholders={
-                "url_path": url_path,
-            },
-            data_schema=vol.Schema({}),
+            errors=errors,
         )

@@ -10,15 +10,17 @@ from .const import DOMAIN, LOGGER
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
-
     from .data import NbeConfigEntry
 
 
 class NbeDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Coordinator for NBE V16 – push-driven, no polling.
 
-    Data is updated via async_set_updated_data() when the EP20 view
-    receives a new payload.
+    Data is updated exclusively via async_set_updated_data() when the
+    EP20 client receives a new payload. No _async_update_data() is defined
+    intentionally – defining it would cause HA to schedule a refresh job
+    during async_forward_entry_setups() that never resolves cleanly,
+    blocking HA startup indefinitely.
     """
 
     config_entry: NbeConfigEntry
@@ -29,9 +31,5 @@ class NbeDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             hass=hass,
             logger=LOGGER,
             name=DOMAIN,
-            # No update_interval – data arrives via push from EP20
+            # No update_interval and no _async_update_data – purely push-driven.
         )
-
-    async def _async_update_data(self) -> dict[str, Any]:
-        """No polling – data is pushed by the EP20 via async_set_updated_data."""
-        return self.data or {}

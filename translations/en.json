@@ -1,21 +1,25 @@
 {
-    "config": {
-        "step": {
-            "user": {
-                "description": "If you need help with the configuration have a look here: {documentation_url}",
-                "data": {
-                    "username": "Username",
-                    "password": "Password"
-                }
-            }
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up NBE V16 Pellet Boiler",
+        "description": "Enter the IP address and TCP port of the EP20 module. Home Assistant will connect as a TCP client to the EP20 Telnet port and passively read the UART data stream. The EP20 factory configuration remains unchanged.",
+        "data": {
+          "host": "IP Address",
+          "port": "TCP Port"
         },
-        "error": {
-            "auth": "Username/Password is wrong.",
-            "connection": "Unable to connect to the server.",
-            "unknown": "Unknown error occurred."
-        },
-        "abort": {
-            "already_configured": "This entry is already configured."
+        "data_description": {
+          "host": "IP address of the EP20 module, e.g. 192.168.1.100",
+          "port": "Telnet port of the EP20 module (default: 23)"
         }
+      }
+    },
+    "error": {
+      "host_required": "Please enter the IP address of the EP20 module.",
+      "cannot_connect": "Cannot connect to the EP20 module at the given IP address and TCP port."
+    },
+    "abort": {
+      "already_configured": "This boiler is already configured."
     }
+  }
 }

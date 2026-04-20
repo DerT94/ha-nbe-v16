@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from logging import Logger, getLogger
 
+
 LOGGER: Logger = getLogger(__package__)
 
 DOMAIN = "nbe_v16"
@@ -11,11 +12,25 @@ DOMAIN = "nbe_v16"
 # Attribution
 ATTRIBUTION = "Data provided by NBE V16 Pellet Boiler via EP20 module"
 
-# Fixed base path prefix; only the suffix is user-configurable
-NBE_PATH_PREFIX = "/nbe/"
+# Device info
+DEVICE_NAME = "NBE V16 Pellet Boiler"
+DEVICE_MANUFACTURER = "NBE"
+DEVICE_MODEL = "V16"
 
-# Default URL path suffix for the EP20 endpoint
-DEFAULT_URL_SUFFIX = "boiler1"
+# Config entry keys
+CONF_HOST = "host"
+CONF_PORT = "port"
 
-# Config entry key for the user-configurable URL suffix
-CONF_URL_SUFFIX = "url_suffix"
+# Default TCP connection parameters for the EP20 Telnet port
+DEFAULT_PORT = 23
+
+# Reconnect delay in seconds after a TCP connection loss
+RECONNECT_DELAY = 10
+
+# TCP connection timeout in seconds – prevents open_connection() from hanging
+# indefinitely when the EP20 is temporarily unreachable at startup.
+CONNECT_TIMEOUT = 15
+
+# readline() timeout in seconds – prevents the read loop from blocking forever
+# if the EP20 stops sending data (e.g. stale TCP connection without RST).
+READ_TIMEOUT = 60

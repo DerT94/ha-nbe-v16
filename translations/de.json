@@ -3,21 +3,20 @@
     "step": {
       "user": {
         "title": "NBE V16 Pelletkessel einrichten",
-        "description": "Gib den URL-Suffix für den EP20-Endpoint ein. Das Präfix '/nbe/' ist fest, die vollständige URL lautet dann: http://[HA-IP]:8123/nbe/[dein-suffix]/\n\nDokumentation: {documentation_url}",
+        "description": "Gib die IP-Adresse und den TCP-Port des EP20-Moduls ein. Home Assistant verbindet sich als TCP-Client und liest den UART-Datenstrom passiv mit. Die Werkskonfiguration des EP20 bleibt unverändert.",
         "data": {
-          "url_suffix": "URL-Suffix"
+          "host": "IP-Adresse",
+          "port": "TCP-Port"
         },
         "data_description": {
-          "url_suffix": "Nur den Suffix eingeben, z.B. 'boiler1'. Das Präfix '/nbe/' ist fest vorgegeben."
+          "host": "IP-Adresse des EP20-Moduls, z.B. 192.168.1.100",
+          "port": "Telnet-Port des EP20-Moduls (Standard: 23)"
         }
-      },
-      "instructions": {
-        "title": "EP20-Modul konfigurieren",
-        "description": "Lege im EP20-Webinterface eine neue Verbindung mit folgenden Einstellungen an:\n\n**Basic Settings**\n- Protocol: `Http`\n\n**Socket Settings**\n- Server: `[HA-IP]`\n- Server Port: `8123`\n\n**Protocol Settings**\n- Connect Mode: `Burst`\n- Stop Serial: `???`\n- Method: `POST`\n- Version: `HTTP/1.0`\n- Path: `{url_path}`\n\nKlicke im EP20-Interface auf **Submit**, dann hier auf **Absenden**."
       }
     },
     "error": {
-      "url_suffix_required": "Bitte einen URL-Suffix eingeben."
+      "host_required": "Bitte die IP-Adresse des EP20-Moduls eingeben.",
+      "cannot_connect": "Verbindung zum EP20-Modul unter der angegebenen IP-Adresse und dem TCP-Port nicht möglich."
     },
     "abort": {
       "already_configured": "Dieser Kessel ist bereits konfiguriert."
