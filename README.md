@@ -1,6 +1,6 @@
 # ha-nbe-v16 – Home Assistant Integration for NBE V16 Pellet Boiler
 
-[![GitHub Release](https://img.shields.io/github/release/DerT94/ha-nbe-v16.svg)](https://github.com/DerT94/ha-nbe-v16/releases)
+[
 
 A local Home Assistant integration for the **NBE V16 pellet boiler** via the **EP20 communication module**.
 
@@ -10,7 +10,7 @@ A local Home Assistant integration for the **NBE V16 pellet boiler** via the **E
 
 - 🔥 **100% local** – no cloud, no NBE servers
 - 📡 **Push-style data flow** – Home Assistant opens a local TCP connection to the EP20 and passively reads the incoming UART stream
-- 🌡️ Raw sensor creation for transmitted Z-values
+- 🌡️ Named, decoded sensors for all known Z-values with correct units and scaling
 - ⚡ Push-driven updates via `DataUpdateCoordinator` (no polling loop)
 - 🇩🇪 🇬🇧 German & English translations for the config flow
 - ⚙️ **UI Configuration** – setup via the Home Assistant UI (Config Flow)
@@ -29,6 +29,30 @@ Host: stokercloud.dk
 ```
 
 I only parse `/v16dev/opr.php` frames for operational Z-values. Frames for `/v16dev/setup.php` and `/v16dev/events2.php` are ignored.
+
+## Available Sensors
+
+All sensors are verified against 25 captured EP20 snapshots (20 operational + 5 standby).
+Duplicate Z-keys are exposed as separate entities but **disabled by default** – they can be enabled manually in Home Assistant if needed.
+
+| Sensor | Z-Key | Unit | Notes |
+|--------|-------|------|-------|
+| Boiler Temperature | z02 | °C | Primary; z50 and z60 are duplicates (disabled) |
+| Drop Shaft Temperature | z03 | °C | |
+| Flue Gas Temperature | z04 | °C | |
+| Power | z00 | % | Primary; z59 is a duplicate (disabled) |
+| Power Output | z01 | kW | |
+| Oxygen | z05 | % | Primary; z70 is a duplicate (disabled) |
+| Oxygen Setpoint | z24 | % | Primary; z71 is a duplicate (disabled) |
+| Oxygen Regulation Low | z82 | % | |
+| Oxygen Regulation Mid | z83 | % | |
+| Oxygen Regulation High | z84 | % | |
+| Hopper Content | z18 | % | |
+| Consumption 24h | z158 | kg | |
+| Consumption Total | z159 | kg | Total increasing counter |
+| Fan Speed | z121 | % | |
+| Combustion Chamber Pressure | z123 | Pa | |
+| Cycle Runtime | z111 | s | Resets on each new burn cycle |
 
 ## Why I do not reconfigure the EP20
 
@@ -51,13 +75,17 @@ The EP20 must be reachable on the local network via its TCP/Telnet port.
 ## Current Status
 
 ### Phase 1 – TCP stream integration ✅
-I have implemented a persistent local TCP connection to the EP20, parse incoming `opr.php` frames, and expose raw Z-values as Home Assistant sensors.
+Persistent local TCP connection to the EP20, parsing incoming `opr.php` frames.
 
 ### Phase 2 – Dynamic raw sensors ✅
-I currently create raw `SensorEntity` objects dynamically for Z-values seen in the EP20 stream.
+Raw `SensorEntity` objects created dynamically for Z-values seen in the EP20 stream.
 
-### Phase 3 – Decoded sensors & metadata ⏳
-Next, I want to replace or complement raw sensors with properly named and decoded entities based on a Z-value metadata table.
+### Phase 3 – Decoded sensors & metadata ✅
+Named, decoded sensor entities based on a verified Z-value metadata table in `const.py`.
+All known Z-values are mapped to correct names, units, scaling factors, and HA device classes.
+
+### Phase 4 – Diagnostics & tests ⏳
+Parser tests, diagnostics support, and MAC-based stable device identifier.
 
 ## File Status
 
@@ -69,28 +97,27 @@ Next, I want to replace or complement raw sensors with properly named and decode
 | `api.py` | ✅ Done | Async TCP client and EP20 stream parser |
 | `coordinator.py` | ✅ Done | Push-driven coordinator |
 | `entity.py` | ✅ Done | Shared base entity with `DeviceInfo` |
-| `sensor.py` | ✅ Done | Dynamic raw Z-value sensors |
-| `const.py` | ⏳ In Progress | Future metadata table for decoded sensors |
+| `const.py` | ✅ Done | Z-value metadata table with 21 verified sensors |
+| `sensor.py` | ✅ Done | Decoded, named sensors from metadata table |
 | `binary_sensor.py` | ⏳ Pending | Optional future typed entities if metadata requires it |
 
 ## Next Steps
 
 ### Must Have
-- [ ] Define a Z-value metadata table in `const.py`
-- [ ] Add decoded, named sensor entities based on known Z-values
-- [ ] Improve entity typing, units, and scaling
+- [ ] MAC address as stable device identifier
+- [ ] Parser tests with captured sample frames
 
 ### Nice to Have
-- [ ] Add diagnostics / debug support for troubleshooting
-- [ ] Add parser-focused tests with captured sample frames
-- [ ] Expand translations when entity names and states become stable
+- [ ] Diagnostics / debug support for troubleshooting
+- [ ] Translations for sensor names when entity names become stable
+- [ ] Identify remaining unknown Z-values (z101, z40, z87, z88)
 
 ## Important Notes
 
 - This integration is currently **read-only**.
 - I do **not** send commands to the EP20.
 - I do **not** reconfigure EP20 settings.
-- The goal is local monitoring and reverse engineering of Z-values.
+- The goal is local monitoring of the NBE V16 pellet boiler.
 
 ## License
 
