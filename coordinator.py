@@ -16,11 +16,8 @@ if TYPE_CHECKING:
 class NbeDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Coordinator for NBE V16 – push-driven, no polling.
 
-    Data is updated exclusively via async_set_updated_data() when the
-    EP20 client receives a new payload. No _async_update_data() is defined
-    intentionally – defining it would cause HA to schedule a refresh job
-    during async_forward_entry_setups() that never resolves cleanly,
-    blocking HA startup indefinitely.
+    The EP20 reader pushes measurements and reports disconnects or stale data.
+    No periodic refresh is scheduled.
     """
 
     config_entry: NbeConfigEntry
@@ -33,3 +30,5 @@ class NbeDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             name=DOMAIN,
             # No update_interval and no _async_update_data – purely push-driven.
         )
+        # A TCP connection alone is not evidence of valid measurements.
+        self.last_update_success = False

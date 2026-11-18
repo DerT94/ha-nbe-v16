@@ -27,11 +27,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: NbeConfigEntry) -> bool:
     coordinator.config_entry = entry
     entry.runtime_data = coordinator
 
-    # Set data BEFORE async_forward_entry_setups() so coordinator.data is not
-    # None when CoordinatorEntity instances register themselves. This prevents
-    # any implicit async_request_refresh() from being scheduled.
-    coordinator.async_set_updated_data({})
-
     host: str = entry.data[CONF_HOST]
     port: int = int(entry.data[CONF_PORT])
 

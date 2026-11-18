@@ -33,6 +33,10 @@ CONNECT_TIMEOUT = 15
 # readline() timeout in seconds
 READ_TIMEOUT = 60
 
+# Measurement validity, independent of TCP traffic/read timeout. A passive
+# capture showed about 62 seconds between updates; allow nearly three cycles.
+MEASUREMENT_MAX_AGE = 180
+
 
 # ---------------------------------------------------------------------------
 # Z-value metadata

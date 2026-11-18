@@ -7,7 +7,13 @@ import re
 from typing import TYPE_CHECKING
 from urllib.parse import parse_qs, urlparse
 
-from .const import CONNECT_TIMEOUT, LOGGER, READ_TIMEOUT, RECONNECT_DELAY
+from .const import (
+    CONNECT_TIMEOUT,
+    LOGGER,
+    MEASUREMENT_MAX_AGE,
+    READ_TIMEOUT,
+    RECONNECT_DELAY,
+)
 
 if TYPE_CHECKING:
     from .coordinator import NbeDataUpdateCoordinator
@@ -54,6 +60,7 @@ class EP20Client:
         self._running = False
         self._stop_event = asyncio.Event()
         self._writer: asyncio.StreamWriter | None = None
+        self._data_timeout: asyncio.TimerHandle | None = None
 
     async def run(self) -> None:
         """Connect to the EP20 and read the UART stream indefinitely.
@@ -67,10 +74,14 @@ class EP20Client:
         while self._running:
             try:
                 await self._connect_and_read()
+                if self._running:
+                    self._invalidate_data(ConnectionError("EP20 stream closed"))
             except asyncio.CancelledError:
+                self._invalidate_data(ConnectionError("EP20 reader cancelled"))
                 LOGGER.debug("NBE V16: TCP reader task cancelled")
                 raise
             except Exception as err:  # noqa: BLE001
+                self._invalidate_data(err)
                 if not self._running:
                     break
                 LOGGER.warning(
@@ -88,6 +99,9 @@ class EP20Client:
                     )
                 except TimeoutError:
                     pass
+                except asyncio.CancelledError:
+                    self._invalidate_data(ConnectionError("EP20 reader cancelled"))
+                    raise
 
     async def stop(self) -> None:
         """Signal the reader loop to stop and close the TCP connection.
@@ -98,6 +112,7 @@ class EP20Client:
         """
         self._running = False
         self._stop_event.set()
+        self._invalidate_data(ConnectionError("EP20 reader stopped"))
         if self._writer is not None:
             try:
                 self._writer.close()
@@ -105,6 +120,17 @@ class EP20Client:
             except Exception:  # noqa: BLE001
                 pass
             self._writer = None
+
+    def _invalidate_data(self, error: Exception) -> None:
+        """Mark measurements unavailable without replacing the last payload."""
+        if self._data_timeout is not None:
+            self._data_timeout.cancel()
+            self._data_timeout = None
+        self._coordinator.async_set_update_error(error)
+
+    def _expire_data(self) -> None:
+        """Expire measurements even when unrelated stream traffic continues."""
+        self._invalidate_data(TimeoutError("EP20 measurements are stale"))
 
     async def _connect_and_read(self) -> None:
         """Open a TCP connection and read lines until the connection closes."""
@@ -241,6 +267,11 @@ class EP20Client:
         if params.get("mac") and params["mac"][0]:
             payload["mac"] = params["mac"][0]
 
+        if self._data_timeout is not None:
+            self._data_timeout.cancel()
+        self._data_timeout = asyncio.get_running_loop().call_later(
+            MEASUREMENT_MAX_AGE, self._expire_data
+        )
         self._coordinator.async_set_updated_data(payload)
 
         LOGGER.debug(
