@@ -30,7 +30,7 @@ RECONNECT_DELAY = 10
 # TCP connection timeout in seconds
 CONNECT_TIMEOUT = 15
 
-# readline() timeout in seconds
+# Timeout for receiving the next TCP data block, in seconds
 READ_TIMEOUT = 60
 
 # Measurement validity, independent of TCP traffic/read timeout. A passive
@@ -65,7 +65,7 @@ class ZValueMeta:
     """HA SensorStateClass string, or None."""
 
     enabled_by_default: bool = True
-    """False for duplicate Z-keys, disabled in HA by default."""
+    """False for duplicate or unverified Z-keys, disabled in HA by default."""
 
     duplicate_of: str | None = None
     """Primary key this entry duplicates, if any."""
@@ -99,48 +99,50 @@ _SUBSTATE_LOOKUP: Final[dict[int, str]] = {
 }
 
 
+# Disputed mappings use unitless raw integers until independent evidence is
+# available. See docs/mapping-evidence.md for scope and statistics implications.
 Z_VALUE_METADATA: Final[tuple[ZValueMeta, ...]] = (
     # Temperatures
     ZValueMeta("z02", "Boiler Temperature", "°C", 10.0, "temperature", "measurement"),
     ZValueMeta("z50", "Boiler Temperature (z50)", "°C", 10.0, "temperature", "measurement", enabled_by_default=False, duplicate_of="z02"),
     ZValueMeta("z60", "Boiler Temperature (z60)", "°C", 10.0, "temperature", "measurement", enabled_by_default=False, duplicate_of="z02"),
-    ZValueMeta("z03", "Drop Shaft Temperature", "°C", 10.0, "temperature", "measurement"),
+    ZValueMeta("z03", "Z-value z03 (unverified)", None, 1.0, None, None, enabled_by_default=False),
     ZValueMeta("z04", "Flue Gas Temperature", "°C", 10.0, "temperature", "measurement"),
     ZValueMeta("z25", "Boiler Setpoint", "°C", 10.0, "temperature", "measurement"),
     ZValueMeta("z124", "Outdoor Temperature", "°C", 10.0, "temperature", "measurement"),
 
     # Power
-    ZValueMeta("z00", "Power", "%", 1.0, None, "measurement"),
-    ZValueMeta("z59", "Power (z59)", "%", 1.0, None, "measurement", enabled_by_default=False, duplicate_of="z00"),
-    ZValueMeta("z01", "Power Output", "kW", 10.0, "power", "measurement"),
+    ZValueMeta("z00", "Z-value z00 (unverified)", None, 1.0, None, None, enabled_by_default=False),
+    ZValueMeta("z59", "Z-value z59 (unverified)", None, 1.0, None, None, enabled_by_default=False, duplicate_of="z00"),
+    ZValueMeta("z01", "Z-value z01 (unverified)", None, 1.0, None, None, enabled_by_default=False),
 
     # Oxygen
     ZValueMeta("z05", "Oxygen", "%", 10.0, None, "measurement"),
     ZValueMeta("z70", "Oxygen (z70)", "%", 10.0, None, "measurement", enabled_by_default=False, duplicate_of="z05"),
-    ZValueMeta("z24", "Oxygen Setpoint", "%", 10.0, None, "measurement"),
-    ZValueMeta("z71", "Oxygen Setpoint (z71)", "%", 10.0, None, "measurement", enabled_by_default=False, duplicate_of="z24"),
+    ZValueMeta("z24", "Z-value z24 (unverified)", None, 1.0, None, None, enabled_by_default=False),
+    ZValueMeta("z71", "Z-value z71 (unverified)", None, 1.0, None, None, enabled_by_default=False, duplicate_of="z24"),
 
     # O2 regulation thresholds
-    ZValueMeta("z82", "Oxygen Regulation Low", "%", 100.0, None, "measurement"),
-    ZValueMeta("z83", "Oxygen Regulation Mid", "%", 100.0, None, "measurement"),
-    ZValueMeta("z84", "Oxygen Regulation High", "%", 100.0, None, "measurement"),
+    ZValueMeta("z82", "Z-value z82 (unverified)", None, 1.0, None, None, enabled_by_default=False),
+    ZValueMeta("z83", "Z-value z83 (unverified)", None, 1.0, None, None, enabled_by_default=False),
+    ZValueMeta("z84", "Z-value z84 (unverified)", None, 1.0, None, None, enabled_by_default=False),
 
     # Hopper
     ZValueMeta("z18", "Hopper Content", "%", 1.0, None, "measurement"),
 
     # Consumption
-    ZValueMeta("z158", "Consumption 24h", "kg", 10.0, None, "measurement"),
+    ZValueMeta("z158", "Z-value z158 (unverified)", None, 1.0, None, None, enabled_by_default=False),
     ZValueMeta("z159", "Consumption Total", "kg", 1.0, None, "total_increasing"),
 
     # Fan
-    ZValueMeta("z121", "Fan Speed", "%", 1.0, None, "measurement"),
+    ZValueMeta("z121", "Z-value z121 (unverified)", None, 1.0, None, None, enabled_by_default=False),
     ZValueMeta("z96", "Fan RPM", "rpm", 1.0, None, "measurement"),
 
     # Combustion chamber
     ZValueMeta("z123", "Combustion Chamber Pressure", "Pa", 1.0, "pressure", "measurement"),
 
     # Cycle timer
-    ZValueMeta("z111", "Cycle Runtime", "s", 1.0, "duration", "measurement"),
+    ZValueMeta("z111", "Z-value z111 (unverified)", None, 1.0, None, None, enabled_by_default=False),
 
     # Status / Enum
     ZValueMeta("z40", "Substate", None, 1.0, None, None, lookup=_SUBSTATE_LOOKUP),
