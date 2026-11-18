@@ -22,12 +22,13 @@ class NbeDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     config_entry: NbeConfigEntry
 
-    def __init__(self, hass: HomeAssistant) -> None:
+    def __init__(self, hass: HomeAssistant, entry: NbeConfigEntry) -> None:
         """Initialize the coordinator."""
         super().__init__(
             hass=hass,
             logger=LOGGER,
             name=DOMAIN,
+            config_entry=entry,
             # No update_interval: measurements arrive through the reader.
         )
         # A TCP connection alone is not evidence of valid measurements.

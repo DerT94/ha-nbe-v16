@@ -23,8 +23,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: NbeConfigEntry) -> bool:
     """Set up NBE V16 integration from a config entry."""
     LOGGER.debug("NBE V16: Setting up entry %s", entry.entry_id)
 
-    coordinator = NbeDataUpdateCoordinator(hass)
-    coordinator.config_entry = entry
+    coordinator = NbeDataUpdateCoordinator(hass, entry)
     entry.runtime_data = coordinator
 
     host: str = entry.data[CONF_HOST]

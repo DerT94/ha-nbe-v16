@@ -10,6 +10,9 @@ from homeassistant.helpers import selector
 
 from .const import CONF_HOST, CONF_PORT, DEFAULT_PORT, DOMAIN, LOGGER
 
+_VALIDATION_CONNECT_TIMEOUT = 5.0
+_VALIDATION_CLOSE_TIMEOUT = 2.0
+
 
 class NbeV16ConfigFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     """Config flow for NBE V16."""
@@ -31,12 +34,15 @@ class NbeV16ConfigFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 errors[CONF_HOST] = "host_required"
             else:
                 try:
-                    reader, writer = await asyncio.wait_for(
+                    # This validates TCP reachability, not UART measurements.
+                    _, writer = await asyncio.wait_for(
                         asyncio.open_connection(host, port),
-                        timeout=5.0,
+                        timeout=_VALIDATION_CONNECT_TIMEOUT,
                     )
                     writer.close()
-                    await writer.wait_closed()
+                    await asyncio.wait_for(
+                        writer.wait_closed(), timeout=_VALIDATION_CLOSE_TIMEOUT
+                    )
                 except TimeoutError:
                     errors["base"] = "cannot_connect"
                 except OSError:
