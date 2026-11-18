@@ -67,6 +67,7 @@ class EP20Client:
         self._stop_event = asyncio.Event()
         self._writer: asyncio.StreamWriter | None = None
         self._data_timeout: asyncio.TimerHandle | None = None
+        self._connection_lost = False
 
     async def run(self) -> None:
         """Connect to the EP20 and read the UART stream indefinitely.
@@ -81,7 +82,9 @@ class EP20Client:
             try:
                 await self._connect_and_read()
                 if self._running:
-                    self._invalidate_data(ConnectionError("EP20 stream closed"))
+                    error = ConnectionError("EP20 stream closed")
+                    self._invalidate_data(error)
+                    self._report_connection_lost(error)
             except asyncio.CancelledError:
                 self._invalidate_data(ConnectionError("EP20 reader cancelled"))
                 LOGGER.debug("NBE V16: TCP reader task cancelled")
@@ -90,13 +93,7 @@ class EP20Client:
                 self._invalidate_data(err)
                 if not self._running:
                     break
-                LOGGER.warning(
-                    "NBE V16: TCP connection to %s:%s lost (%s) - reconnecting in %ds",
-                    self._host,
-                    self._port,
-                    err,
-                    RECONNECT_DELAY,
-                )
+                self._report_connection_lost(err)
 
             if self._running:
                 try:
@@ -108,6 +105,25 @@ class EP20Client:
                 except asyncio.CancelledError:
                     self._invalidate_data(ConnectionError("EP20 reader cancelled"))
                     raise
+
+    def _report_connection_lost(self, error: Exception) -> None:
+        """Report one warning per TCP outage, with retry details at DEBUG."""
+        if self._connection_lost:
+            LOGGER.debug(
+                "NBE V16: TCP retry failed for %s:%s (%s)",
+                self._host,
+                self._port,
+                error,
+            )
+            return
+        self._connection_lost = True
+        LOGGER.warning(
+            "NBE V16: TCP connection to %s:%s lost (%s) - reconnecting in %ds",
+            self._host,
+            self._port,
+            error,
+            RECONNECT_DELAY,
+        )
 
     async def stop(self) -> None:
         """Signal the reader loop to stop and close the TCP connection.
@@ -144,7 +160,7 @@ class EP20Client:
         A marker completes a frame immediately. Clean EOF also accepts a
         complete request; timeout, reset and cancellation discard any remainder.
         """
-        LOGGER.info(
+        LOGGER.debug(
             "NBE V16: Connecting to EP20 at %s:%s", self._host, self._port
         )
         reader, writer = await asyncio.wait_for(
@@ -152,7 +168,14 @@ class EP20Client:
             timeout=CONNECT_TIMEOUT,
         )
         self._writer = writer
-        LOGGER.info(
+        if self._connection_lost:
+            LOGGER.info(
+                "NBE V16: TCP connection to %s:%s restored",
+                self._host,
+                self._port,
+            )
+            self._connection_lost = False
+        LOGGER.debug(
             "NBE V16: Connected to EP20 at %s:%s - reading stream",
             self._host,
             self._port,
@@ -166,7 +189,7 @@ class EP20Client:
                     reader.read(_READ_CHUNK_BYTES), timeout=READ_TIMEOUT
                 )
                 if not raw:
-                    LOGGER.info(
+                    LOGGER.debug(
                         "NBE V16: TCP connection closed by EP20 (%s:%s)",
                         self._host,
                         self._port,
