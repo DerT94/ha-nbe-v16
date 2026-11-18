@@ -32,7 +32,7 @@ _READ_CHUNK_BYTES = 4096
 # The EP20 Telnet port prepends Telnet IAC bytes and sometimes a "login:"
 # prompt prefix before the actual HTTP request string. This pattern
 # extracts the first occurrence of "GET /v16dev/..." regardless of leading garbage.
-_GET_RE = re.compile(r"GET (/v16dev/\S+) HTTP/")
+_GET_RE = re.compile(r"GET (/v16dev/\S+) HTTP/[0-9]+\.[0-9]+[ \t]*$")
 
 # EP20 endpoint that carries operational Z-value data
 _ENDPOINT_OPR = "/v16dev/opr.php"
@@ -139,7 +139,11 @@ class EP20Client:
         self._invalidate_data(TimeoutError("EP20 measurements are stale"))
 
     async def _connect_and_read(self) -> None:
-        """Read bounded UART frames and resynchronize after oversized input."""
+        """Read bounded UART frames and resynchronize after oversized input.
+
+        A marker completes a frame immediately. Clean EOF also accepts a
+        complete request; timeout, reset and cancellation discard any remainder.
+        """
         LOGGER.info(
             "NBE V16: Connecting to EP20 at %s:%s", self._host, self._port
         )
