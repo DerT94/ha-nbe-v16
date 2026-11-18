@@ -28,7 +28,13 @@ class NbeDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             hass=hass,
             logger=LOGGER,
             name=DOMAIN,
-            # No update_interval and no _async_update_data – purely push-driven.
+            # No update_interval: measurements arrive through the reader.
         )
         # A TCP connection alone is not evidence of valid measurements.
         self.last_update_success = False
+
+    async def async_request_refresh(self) -> None:
+        """Accept manual refresh without fetching or validating cached data.
+
+        Only a new EP20 measurement can restore success and renew data age.
+        """
