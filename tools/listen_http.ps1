@@ -1,3 +1,7 @@
+# HISTORICAL EXPERIMENT - not part of the read-only integration or its tests.
+# Sends HTTP responses and assumes a reconfigured EP20 HTTP target.
+# Not an approved passive capture tool. See tools/README.md before any use.
+
 # ============================================================
 # NBE V16 – TCP Diagnose-Listener (Windows PowerShell)
 # Lauscht auf rohe TCP-Verbindungen vom EP20-Modul.

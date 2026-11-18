@@ -1,3 +1,8 @@
+# HISTORICAL EXPERIMENT - not part of the read-only integration or its tests.
+# Uses the cloud, sends Telnet replies and loses partial lines across TCP reads.
+# Credentials/tokens can leak through URLs, console output and error records.
+# Its reconstructed frames are not byte-faithful fixtures. See tools/README.md.
+
 # ============================================================
 # NBE V16 - Datensammler v4
 # Aenderungen ggÃ¼ v3:

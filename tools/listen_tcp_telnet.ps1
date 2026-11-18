@@ -1,3 +1,7 @@
+# HISTORICAL EXPERIMENT - not part of the read-only integration or its tests.
+# Sends Telnet negotiation replies to a live endpoint and prints raw identifiers.
+# Not an approved passive capture tool. See tools/README.md before any use.
+
 # ============================================================
 # Connects to TCP/telnet server 10.30.0.14:23, reads and prints incoming UTF-8
 # data, and silently rejects all Telnet option negotiation (IAC sequences).
