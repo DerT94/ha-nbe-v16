@@ -52,6 +52,7 @@ class EP20Client:
         self._port = port
         self._coordinator = coordinator
         self._running = False
+        self._stop_event = asyncio.Event()
         self._writer: asyncio.StreamWriter | None = None
 
     async def run(self) -> None:
@@ -62,6 +63,7 @@ class EP20Client:
         that HA can shut down without delay.
         """
         self._running = True
+        self._stop_event.clear()
         while self._running:
             try:
                 await self._connect_and_read()
@@ -78,11 +80,14 @@ class EP20Client:
                     err,
                     RECONNECT_DELAY,
                 )
+
+            if self._running:
                 try:
-                    await asyncio.sleep(RECONNECT_DELAY)
-                except asyncio.CancelledError:
-                    LOGGER.debug("NBE V16: reconnect wait cancelled - shutting down")
-                    raise
+                    await asyncio.wait_for(
+                        self._stop_event.wait(), timeout=RECONNECT_DELAY
+                    )
+                except TimeoutError:
+                    pass
 
     async def stop(self) -> None:
         """Signal the reader loop to stop and close the TCP connection.
@@ -92,6 +97,7 @@ class EP20Client:
         so the subsequent task.cancel() / await completes without delay.
         """
         self._running = False
+        self._stop_event.set()
         if self._writer is not None:
             try:
                 self._writer.close()
