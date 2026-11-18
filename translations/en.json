@@ -12,6 +12,18 @@
           "host": "IP address of the EP20 module, e.g. 192.168.1.100",
           "port": "Telnet port of the EP20 module (default: 23)"
         }
+      },
+      "reconfigure": {
+        "title": "Change EP20 connection",
+        "description": "Enter the new IP address and TCP port of the same EP20 module. Existing entities are retained.",
+        "data": {
+          "host": "IP Address",
+          "port": "TCP Port"
+        },
+        "data_description": {
+          "host": "IP address of the EP20 module, e.g. 192.168.1.100",
+          "port": "Telnet port of the EP20 module (default: 23)"
+        }
       }
     },
     "error": {
