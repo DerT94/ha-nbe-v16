@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
+    SensorEntityDescription,
     SensorStateClass,
 )
 
@@ -74,11 +75,15 @@ class NbeZValueSensor(NbeEntity, SensorEntity):
         super().__init__(coordinator)
         self._meta = meta
         self._attr_unique_id = f"{entry.entry_id}_{meta.key}"
-        self._attr_name = meta.name
-        self._attr_native_unit_of_measurement = meta.unit
-        self._attr_device_class = _device_class(meta)
-        self._attr_state_class = _state_class(meta)
-        self._attr_entity_registry_enabled_default = meta.enabled_by_default
+        self.entity_description = SensorEntityDescription(
+            key=meta.key,
+            name=meta.name,
+            translation_key=meta.key,
+            native_unit_of_measurement=meta.unit,
+            device_class=_device_class(meta),
+            state_class=_state_class(meta),
+            entity_registry_enabled_default=meta.enabled_by_default,
+        )
 
     @property
     def native_value(self) -> int | float | str | None:

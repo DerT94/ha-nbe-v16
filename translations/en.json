@@ -33,5 +33,84 @@
     "abort": {
       "already_configured": "This boiler is already configured."
     }
+  },
+  "entity": {
+    "sensor": {
+      "z02": {
+        "name": "Boiler Temperature"
+      },
+      "z50": {
+        "name": "Boiler Temperature (z50)"
+      },
+      "z60": {
+        "name": "Boiler Temperature (z60)"
+      },
+      "z03": {
+        "name": "Z-value z03 (unverified)"
+      },
+      "z04": {
+        "name": "Flue Gas Temperature"
+      },
+      "z25": {
+        "name": "Boiler Setpoint"
+      },
+      "z124": {
+        "name": "Outdoor Temperature"
+      },
+      "z00": {
+        "name": "Z-value z00 (unverified)"
+      },
+      "z59": {
+        "name": "Z-value z59 (unverified)"
+      },
+      "z01": {
+        "name": "Z-value z01 (unverified)"
+      },
+      "z05": {
+        "name": "Oxygen"
+      },
+      "z70": {
+        "name": "Oxygen (z70)"
+      },
+      "z24": {
+        "name": "Z-value z24 (unverified)"
+      },
+      "z71": {
+        "name": "Z-value z71 (unverified)"
+      },
+      "z82": {
+        "name": "Z-value z82 (unverified)"
+      },
+      "z83": {
+        "name": "Z-value z83 (unverified)"
+      },
+      "z84": {
+        "name": "Z-value z84 (unverified)"
+      },
+      "z18": {
+        "name": "Hopper Content"
+      },
+      "z158": {
+        "name": "Z-value z158 (unverified)"
+      },
+      "z159": {
+        "name": "Consumption Total"
+      },
+      "z121": {
+        "name": "Z-value z121 (unverified)"
+      },
+      "z96": {
+        "name": "Fan RPM"
+      },
+      "z123": {
+        "name": "Combustion Chamber Pressure"
+      },
+      "z111": {
+        "name": "Z-value z111 (unverified)"
+      },
+      "z40": {
+        "name": "Substate"
+      }
+    }
   }
 }

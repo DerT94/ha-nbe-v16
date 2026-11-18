@@ -33,5 +33,84 @@
     "abort": {
       "already_configured": "Dieser Kessel ist bereits konfiguriert."
     }
+  },
+  "entity": {
+    "sensor": {
+      "z02": {
+        "name": "Kesseltemperatur"
+      },
+      "z50": {
+        "name": "Kesseltemperatur (z50)"
+      },
+      "z60": {
+        "name": "Kesseltemperatur (z60)"
+      },
+      "z03": {
+        "name": "Z-Wert z03 (unbestätigt)"
+      },
+      "z04": {
+        "name": "Abgastemperatur"
+      },
+      "z25": {
+        "name": "Kesselsolltemperatur"
+      },
+      "z124": {
+        "name": "Außentemperatur"
+      },
+      "z00": {
+        "name": "Z-Wert z00 (unbestätigt)"
+      },
+      "z59": {
+        "name": "Z-Wert z59 (unbestätigt)"
+      },
+      "z01": {
+        "name": "Z-Wert z01 (unbestätigt)"
+      },
+      "z05": {
+        "name": "Sauerstoff"
+      },
+      "z70": {
+        "name": "Sauerstoff (z70)"
+      },
+      "z24": {
+        "name": "Z-Wert z24 (unbestätigt)"
+      },
+      "z71": {
+        "name": "Z-Wert z71 (unbestätigt)"
+      },
+      "z82": {
+        "name": "Z-Wert z82 (unbestätigt)"
+      },
+      "z83": {
+        "name": "Z-Wert z83 (unbestätigt)"
+      },
+      "z84": {
+        "name": "Z-Wert z84 (unbestätigt)"
+      },
+      "z18": {
+        "name": "Silofüllstand"
+      },
+      "z158": {
+        "name": "Z-Wert z158 (unbestätigt)"
+      },
+      "z159": {
+        "name": "Gesamtverbrauch"
+      },
+      "z121": {
+        "name": "Z-Wert z121 (unbestätigt)"
+      },
+      "z96": {
+        "name": "Lüfterdrehzahl"
+      },
+      "z123": {
+        "name": "Brennkammerdruck"
+      },
+      "z111": {
+        "name": "Z-Wert z111 (unbestätigt)"
+      },
+      "z40": {
+        "name": "Unterstatus"
+      }
+    }
   }
 }
