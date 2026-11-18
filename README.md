@@ -1,124 +1,57 @@
-# ha-nbe-v16 – Home Assistant Integration for NBE V16 Pellet Boiler
+# NBE V16 for Home Assistant
 
-[
+A local, read-only integration for the NBE V16 pellet boiler through the EP20 UART stream over TCP, normally port 23. Each config entry has its own reader, coordinator and sensors. The integration sends no application data, Telnet negotiation or boiler commands and makes no cloud requests.
 
-A local Home Assistant integration for the **NBE V16 pellet boiler** via the **EP20 communication module**.
+**Work in progress. Not released for production use.** No actual Home Assistant target version has completed acceptance. Current local checks use Python 3.12.14 and simulated HA boundaries. They are not a supported-HA version declaration. Real setup/unload, shutdown, availability, translations and recorder compatibility must be verified on a fixed HA version before release.
 
-> ⚠️ **Work in Progress** – I am actively developing this integration. Expect breaking changes. It is not yet ready for production use.
+## Install and configure
 
-## Features
+1. Obtain this repository from a reviewed revision.
+2. In your HA configuration directory, create `custom_components/nbe_v16/`. This repository root is the integration source: copy its root `.py` files, `manifest.json`, `strings.json` and `translations/` there. Do not copy `.git`, `.agents`, `tools` or local test data.
+3. Restart Home Assistant to discover the custom integration.
+4. Open **Settings → Devices & services → Add integration → NBE V16 Pellet Boiler** and enter the existing EP20 IP address and TCP port.
 
-- 🔥 **100% local** – no cloud, no NBE servers
-- 📡 **Push-style data flow** – Home Assistant opens a local TCP connection to the EP20 and passively reads the incoming UART stream
-- 🌡️ Named, decoded sensors for all known Z-values with correct units and scaling
-- ⚡ Push-driven updates via `DataUpdateCoordinator` (no polling loop)
-- 🇩🇪 🇬🇧 German & English translations for the config flow
-- ⚙️ **UI Configuration** – setup via the Home Assistant UI (Config Flow)
-- 🔀 **Multiple boilers** – each boiler is configured as a separate config entry with its own host/port
+The check proves TCP reachability only. Sensors remain unavailable until valid measurements arrive. The EP20 must already expose the UART stream as a TCP server; the integration does not reconfigure it. No YAML configuration, cloud account or extra Python runtime package is needed. These instructions do not authorize an agent to deploy files or restart HA.
 
-## How it works
+To change the address of the **same EP20**, use the entry's **Reconfigure** action. It updates the endpoint and reloads the same entry, preserving its entry ID and sensor unique IDs. An endpoint assigned to another entry is rejected. This does not authenticate a replacement physical device; the stream's `mac` parameter is not treated as a verified Ethernet MAC address.
 
-I connect Home Assistant locally to the EP20 **Telnet/TCP port** (default: `23`) and passively read the UART stream exposed by the module. The integration is strictly **read-only** and never sends control commands to the boiler or changes the EP20 configuration.
+## Sensors and mapping confidence
 
-Incoming UART data contains GET-style request strings separated by the frame marker `???`, for example:
+There are **25 sensors: 10 enabled by default, 15 disabled**. Twelve disputed fields are unitless, unscaled raw integers and disabled by default. Three further sensors are disabled duplicates. Existing registry choices are retained during updates.
 
-```text
-GET /v16dev/opr.php?mac=65506&z000=502&z001=23&z002=0 HTTP/1.1
-Host: stokercloud.dk
-???
-```
+| Enabled sensor | Z-key | Unit / conversion |
+| --- | --- | --- |
+| Boiler temperature | z02 | °C, raw ÷ 10 |
+| Flue gas temperature | z04 | °C, raw ÷ 10 |
+| Boiler setpoint | z25 | °C, raw ÷ 10 |
+| Outdoor temperature | z124 | °C, raw ÷ 10 |
+| Oxygen | z05 | %, raw ÷ 10 |
+| Hopper content | z18 | %, raw unchanged |
+| Total consumption | z159 | kg, raw unchanged |
+| Fan RPM | z96 | rpm, raw unchanged |
+| Combustion chamber pressure | z123 | Pa, raw unchanged |
+| Substate | z40 | Existing English text; unknown codes retain their number |
 
-I only parse `/v16dev/opr.php` frames for operational Z-values. Frames for `/v16dev/setup.php` and `/v16dev/events2.php` are ignored.
+The remaining named mappings follow the historical reference, without a fresh independent validation. See [mapping evidence and compatibility](docs/mapping-evidence.md) for disputed keys, missing evidence and statistics implications. Do not infer a physical meaning or unit from a disputed raw field. German and English sensor names are provided; native status values remain unchanged to preserve automation comparisons.
 
-## Available Sensors
+## Update and remove
 
-All sensors are verified against 25 captured EP20 snapshots (20 operational + 5 standby).
-Duplicate Z-keys are exposed as separate entities but **disabled by default** – they can be enabled manually in Home Assistant if needed.
+Before updating, back up HA and review the mapping/statistics compatibility notes. Replace the integration files from one reviewed revision, remove stale integration source files that revision no longer contains, and restart HA. Preserve the configured entry to retain entity identities. Review existing enabled disputed sensors: changing a default does not disable existing registry entries. Old statistics are not converted or deleted automatically.
 
-| Sensor | Z-Key | Unit | Notes |
-|--------|-------|------|-------|
-| Boiler Temperature | z02 | °C | Primary; z50 and z60 are duplicates (disabled) |
-| Drop Shaft Temperature | z03 | °C | |
-| Flue Gas Temperature | z04 | °C | |
-| Power | z00 | % | Primary; z59 is a duplicate (disabled) |
-| Power Output | z01 | kW | |
-| Oxygen | z05 | % | Primary; z70 is a duplicate (disabled) |
-| Oxygen Setpoint | z24 | % | Primary; z71 is a duplicate (disabled) |
-| Oxygen Regulation Low | z82 | % | |
-| Oxygen Regulation Mid | z83 | % | |
-| Oxygen Regulation High | z84 | % | |
-| Hopper Content | z18 | % | |
-| Consumption 24h | z158 | kg | |
-| Consumption Total | z159 | kg | Total increasing counter |
-| Fan Speed | z121 | % | |
-| Combustion Chamber Pressure | z123 | Pa | |
-| Cycle Runtime | z111 | s | Resets on each new burn cycle |
+To remove the integration, delete its entry in **Settings → Devices & services**. After removing all NBE V16 entries, delete only the installed `custom_components/nbe_v16/` directory if no longer needed, then restart HA. Removing an entry does not request erasure of recorder history or statistics.
 
-## Why I do not reconfigure the EP20
+## Data handling and known limits
 
-During earlier experiments, I tested an HTTP-based approach. I observed that the boiler appears to configure or supervise the EP20 via its UART link. If the EP20 behavior does not match what the boiler expects, the boiler/EP20 communication can break and the module may reset.
+- Only operational `/v16dev/opr.php` frames are parsed. Setup, events and unrelated endpoints are ignored. Numeric Z-keys with integer raw values qualify as measurements; MAC-only or malformed payloads do not refresh data.
+- `???` completes a frame immediately, including across TCP reads. Clean EOF can complete a syntactically complete request; reset, timeout and cancellation discard unfinished data.
+- Frames over 32 KiB are discarded until the next marker. This is a local protection limit, not a documented EP20 maximum.
+- Disconnects make data unavailable; valid fresh measurements restore it. Measurements expire after 180 seconds without updates, a provisional limit based on a short passive observation. The independent read timeout is 60 seconds and reconnect delay 10 seconds. Manual refresh does not fetch data or renew its age.
+- Valid partial payloads replace previous data; absent keys have no value. Old fields are not merged into new updates.
+- Entry diagnostics contain availability, constant limits, counts and known present Z-keys. Endpoint details, MAC, raw values and exception messages are omitted. Debug logs are separate and should be reviewed before sharing.
+- Hardware identity, long-term stability, all operating-state transitions and full HA/recorder compatibility remain outside completed local checks. There is no boiler control.
 
-Because of this, I do **not** attempt to reconfigure the EP20 in any way. This integration only uses the EP20 in its existing setup and passively reads the locally exposed TCP stream.
-
-## EP20 Requirements
-
-The EP20 must be reachable on the local network via its TCP/Telnet port.
-
-| Setting | Value |
-|---|---|
-| Transport | `TCP` |
-| Default Port | `23` |
-| Home Assistant role | TCP client |
-| EP20 role | TCP server / stream source |
-| Data direction | Read-only |
-
-## Current Status
-
-### Phase 1 – TCP stream integration ✅
-Persistent local TCP connection to the EP20, parsing incoming `opr.php` frames.
-
-### Phase 2 – Dynamic raw sensors ✅
-Raw `SensorEntity` objects created dynamically for Z-values seen in the EP20 stream.
-
-### Phase 3 – Decoded sensors & metadata ✅
-Named, decoded sensor entities based on a verified Z-value metadata table in `const.py`.
-All known Z-values are mapped to correct names, units, scaling factors, and HA device classes.
-
-### Phase 4 – Diagnostics & tests ⏳
-Parser tests, diagnostics support, and MAC-based stable device identifier.
-
-## File Status
-
-| File | Status | Notes |
-|---|---|---|
-| `manifest.json` | ✅ Done | Config flow enabled, `local_push` |
-| `__init__.py` | ✅ Done | Config entry lifecycle, background TCP reader |
-| `config_flow.py` | ✅ Done | Host/port UI setup with connection check |
-| `api.py` | ✅ Done | Async TCP client and EP20 stream parser |
-| `coordinator.py` | ✅ Done | Push-driven coordinator |
-| `entity.py` | ✅ Done | Shared base entity with `DeviceInfo` |
-| `const.py` | ✅ Done | Z-value metadata table with 21 verified sensors |
-| `sensor.py` | ✅ Done | Decoded, named sensors from metadata table |
-| `binary_sensor.py` | ⏳ Pending | Optional future typed entities if metadata requires it |
-
-## Next Steps
-
-### Must Have
-- [ ] MAC address as stable device identifier
-- [ ] Parser tests with captured sample frames
-
-### Nice to Have
-- [ ] Diagnostics / debug support for troubleshooting
-- [ ] Translations for sensor names when entity names become stable
-- [ ] Identify remaining unknown Z-values (z101, z40, z87, z88)
-
-## Important Notes
-
-- This integration is currently **read-only**.
-- I do **not** send commands to the EP20.
-- I do **not** reconfigure EP20 settings.
-- The goal is local monitoring of the NBE V16 pellet boiler.
+The scripts in [tools/](tools/README.md) are historical, non-passive experiments, not integration dependencies or supported capture tools. Existing formatted example captures are not byte-faithful fixtures. Local harnesses and evidence stay in the gitignored `docs/local-abnahme/` directory under this project's acceptance workflow.
 
 ## License
 
-MIT License
+[MIT](LICENSE).
