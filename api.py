@@ -28,6 +28,10 @@ _ENDPOINT_OPR = "/v16dev/opr.php"
 # EP20 endpoints that are intentionally ignored
 _ENDPOINTS_IGNORED = {"/v16dev/events2.php", "/v16dev/setup.php"}
 
+# Keep wire keys unchanged (e.g. z02 and z000); sensor scaling uses integers.
+_Z_KEY_RE = re.compile(r"z[0-9]+")
+_Z_VALUE_RE = re.compile(r"[+-]?[0-9]+")
+
 
 class EP20Client:
     """Persistent async TCP client that reads the EP20 UART stream.
@@ -210,25 +214,29 @@ class EP20Client:
         Receives the URL part directly from _process_frame(), e.g.:
           /v16dev/opr.php?mac=65506&z000=502&z001=0
 
-        No regex needed here – the caller already extracted the clean URL part.
+        Only numeric Z-keys with integer raw values qualify as measurements.
+        Ignore frames without measurements so they cannot refresh coordinator data.
         """
-        params = parse_qs(urlparse(url_part).query)
+        params = parse_qs(urlparse(url_part).query, keep_blank_values=True)
 
         payload: dict[str, str] = {
             key: values[0]
             for key, values in params.items()
-            if key.startswith("z") or key == "mac"
+            if _Z_KEY_RE.fullmatch(key) and _Z_VALUE_RE.fullmatch(values[0])
         }
 
         if not payload:
             LOGGER.warning(
-                "NBE V16: no Z-values found in opr.php frame: %s", url_part
+                "NBE V16: opr.php frame without valid Z-values ignored"
             )
             return
 
+        z_count = len(payload)
+        if params.get("mac") and params["mac"][0]:
+            payload["mac"] = params["mac"][0]
+
         self._coordinator.async_set_updated_data(payload)
 
-        z_count = sum(1 for k in payload if k.startswith("z"))
         LOGGER.debug(
             "NBE V16: opr.php parsed - %d Z-values pushed to coordinator", z_count
         )
