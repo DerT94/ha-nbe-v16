@@ -20,7 +20,13 @@ if TYPE_CHECKING:
 
 
 # Marker that separates UART frames inside the TCP stream
-_FRAME_MARKER = "???"
+_FRAME_MARKER = b"???"
+
+# Local safety bound, not a protocol maximum: even 256 Z-value fields at
+# 32 bytes each need only 8 KiB, versus 107 fields in the passive capture.
+# Allow additional header/noise headroom without accepting unbounded frames.
+_MAX_FRAME_BYTES = 32 * 1024
+_READ_CHUNK_BYTES = 4096
 
 # Regex to extract a GET request line from a raw UART line.
 # The EP20 Telnet port prepends Telnet IAC bytes and sometimes a "login:"
@@ -106,7 +112,7 @@ class EP20Client:
     async def stop(self) -> None:
         """Signal the reader loop to stop and close the TCP connection.
 
-        Closing the writer causes the pending reader.readline() to return
+        Closing the writer causes the pending reader.read() to return
         immediately with an empty bytes object, which unblocks the read loop
         so the subsequent task.cancel() / await completes without delay.
         """
@@ -133,7 +139,7 @@ class EP20Client:
         self._invalidate_data(TimeoutError("EP20 measurements are stale"))
 
     async def _connect_and_read(self) -> None:
-        """Open a TCP connection and read lines until the connection closes."""
+        """Read bounded UART frames and resynchronize after oversized input."""
         LOGGER.info(
             "NBE V16: Connecting to EP20 at %s:%s", self._host, self._port
         )
@@ -148,27 +154,13 @@ class EP20Client:
             self._port,
         )
 
-        buffer: list[str] = []
+        buffer = b""
+        discarding = False
         try:
             while self._running:
-                try:
-                    raw = await asyncio.wait_for(
-                        reader.readline(), timeout=READ_TIMEOUT
-                    )
-                except asyncio.TimeoutError:
-                    # No data received within READ_TIMEOUT – connection is stale.
-                    # Log any buffered content that would otherwise be silently
-                    # discarded so protocol issues can be diagnosed.
-                    if buffer:
-                        LOGGER.warning(
-                            "NBE V16: READ_TIMEOUT with %d buffered line(s) – "
-                            "incomplete frame discarded: %s",
-                            len(buffer),
-                            buffer[:3],
-                        )
-                        buffer = []
-                    raise
-
+                raw = await asyncio.wait_for(
+                    reader.read(_READ_CHUNK_BYTES), timeout=READ_TIMEOUT
+                )
                 if not raw:
                     LOGGER.info(
                         "NBE V16: TCP connection closed by EP20 (%s:%s)",
@@ -177,25 +169,26 @@ class EP20Client:
                     )
                     break
 
-                line = raw.decode("ascii", errors="replace").rstrip("\r\n")
+                buffer += raw
+                while _FRAME_MARKER in buffer:
+                    frame, buffer = buffer.split(_FRAME_MARKER, 1)
+                    if not discarding:
+                        if len(frame) <= _MAX_FRAME_BYTES:
+                            self._process_frame(
+                                frame.decode("ascii", errors="replace").splitlines()
+                            )
+                        else:
+                            LOGGER.warning("NBE V16: oversized UART frame discarded")
+                    discarding = False
 
-                if _FRAME_MARKER in line:
-                    parts = line.split(_FRAME_MARKER)
-
-                    if parts[0]:
-                        buffer.append(parts[0])
-                    self._process_frame(buffer)
-                    buffer = []
-
-                    for fragment in parts[1:-1]:
-                        if fragment:
-                            self._process_frame([fragment])
-
-                    remainder = parts[-1]
-                    if remainder:
-                        buffer.append(remainder)
-                else:
-                    buffer.append(line)
+                # Two trailing bytes may be the start of a split marker and
+                # therefore do not yet count towards the frame size.
+                if len(buffer) > _MAX_FRAME_BYTES + len(_FRAME_MARKER) - 1:
+                    if not discarding:
+                        LOGGER.warning("NBE V16: oversized UART frame discarded")
+                    discarding = True
+                if discarding:
+                    buffer = buffer[-(len(_FRAME_MARKER) - 1):]
         finally:
             self._writer = None
             try:
@@ -204,8 +197,13 @@ class EP20Client:
             except Exception:  # noqa: BLE001
                 pass
 
-        if buffer:
-            self._process_frame(buffer)
+        if (
+            buffer
+            and not discarding
+            and len(buffer) <= _MAX_FRAME_BYTES
+            and self._running
+        ):
+            self._process_frame(buffer.decode("ascii", errors="replace").splitlines())
 
     def _process_frame(self, lines: list[str]) -> None:
         """Identify and parse a complete UART frame.
