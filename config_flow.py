@@ -6,9 +6,14 @@ import asyncio
 
 import voluptuous as vol
 from homeassistant import config_entries
+from homeassistant.core import callback
 from homeassistant.helpers import selector
 
-from .const import CONF_HOST, CONF_PORT, DEFAULT_PORT, DOMAIN, LOGGER
+from .api import raw_tcp_settings
+from .const import (
+    CONF_HOST, CONF_PORT, DEFAULT_PORT, DOMAIN, LOGGER,
+    CONF_RAW_TCP_ENABLED, CONF_RAW_TCP_BIND, CONF_RAW_TCP_PORT, CONF_RAW_TCP_CLIENTS,
+)
 
 _VALIDATION_CONNECT_TIMEOUT = 5.0
 _VALIDATION_CLOSE_TIMEOUT = 2.0
@@ -18,6 +23,14 @@ class NbeV16ConfigFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     """Config flow for NBE V16."""
 
     VERSION = 1
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(
+        config_entry: config_entries.ConfigEntry,
+    ) -> NbeRawTCPOptionsFlow:
+        """Configure the optional raw TCP socket independently of entity IDs."""
+        return NbeRawTCPOptionsFlow()
 
     async def async_step_user(
         self,
@@ -125,3 +138,44 @@ class NbeV16ConfigFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             ),
             errors=errors,
         )
+
+
+class NbeRawTCPOptionsFlow(config_entries.OptionsFlow):
+    """Explicit opt-in to an unencrypted, IP-restricted raw TCP listener."""
+
+    async def async_step_init(
+        self, user_input: dict | None = None,
+    ) -> config_entries.ConfigFlowResult:
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            if user_input.get(CONF_RAW_TCP_ENABLED, False):
+                try:
+                    bind, port, clients = raw_tcp_settings(user_input)
+                except (ValueError, TypeError):
+                    errors["base"] = "invalid_raw_tcp"
+                else:
+                    return self.async_create_entry(title="", data={
+                        CONF_RAW_TCP_ENABLED: True,
+                        CONF_RAW_TCP_BIND: bind,
+                        CONF_RAW_TCP_PORT: port,
+                        CONF_RAW_TCP_CLIENTS: ",".join(sorted(clients)),
+                    })
+            else:
+                return self.async_create_entry(
+                    title="", data={**user_input, CONF_RAW_TCP_ENABLED: False}
+                )
+        values = user_input if user_input is not None else self.config_entry.options
+        return self.async_show_form(step_id="init", data_schema=vol.Schema({
+            vol.Required(CONF_RAW_TCP_ENABLED, default=values.get(
+                CONF_RAW_TCP_ENABLED, False
+            )): bool,
+            vol.Required(CONF_RAW_TCP_BIND, default=values.get(
+                CONF_RAW_TCP_BIND, "127.0.0.1"
+            )): str,
+            vol.Required(CONF_RAW_TCP_PORT, default=values.get(
+                CONF_RAW_TCP_PORT, 2323
+            )): vol.All(vol.Coerce(int), vol.Range(min=1024, max=65535)),
+            vol.Required(CONF_RAW_TCP_CLIENTS, default=values.get(
+                CONF_RAW_TCP_CLIENTS, "127.0.0.1"
+            )): str,
+        }), errors=errors)

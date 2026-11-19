@@ -9,7 +9,7 @@ from homeassistant.const import EVENT_HOMEASSISTANT_STOP, Platform
 from homeassistant.core import Event, HomeAssistant
 
 from .api import EP20Client
-from .const import CONF_HOST, CONF_PORT, DOMAIN, LOGGER
+from .const import CONF_HOST, CONF_PORT, CONF_RAW_TCP_ENABLED, DOMAIN, LOGGER
 from .coordinator import NbeDataUpdateCoordinator
 
 if TYPE_CHECKING:
@@ -45,8 +45,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: NbeConfigEntry) -> bool:
             return
         _stop_called = True
 
+        await client.stop()
         if reader_task is not None:
-            await client.stop()
             reader_task.cancel()
             try:
                 await asyncio.wait_for(reader_task, timeout=5.0)
@@ -57,6 +57,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: NbeConfigEntry) -> bool:
 
     entry.async_on_unload(_async_stop_reader)
 
+    async def _async_options_updated(hass: HomeAssistant, updated: NbeConfigEntry) -> None:
+        await hass.config_entries.async_reload(updated.entry_id)
+
+    entry.async_on_unload(entry.add_update_listener(_async_options_updated))
+
     async def _async_on_ha_stop(event: Event) -> None:  # noqa: ARG001
         await _async_stop_reader()
 
@@ -64,7 +69,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: NbeConfigEntry) -> bool:
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, _async_on_ha_stop)
     )
 
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    try:
+        if entry.options.get(CONF_RAW_TCP_ENABLED, False):
+            await client.start_forwarding(dict(entry.options))
+        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    except BaseException:
+        await _async_stop_reader()
+        raise
 
     # Use async_create_background_task() instead of async_create_task().
     # hass.async_create_task() registers the task in HA's startup job tracker,

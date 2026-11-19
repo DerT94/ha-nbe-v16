@@ -15,6 +15,16 @@ The check proves TCP reachability only. Sensors remain unavailable until valid m
 
 To change the address of the **same EP20**, use the entry's **Reconfigure** action. It updates the endpoint and reloads the same entry, preserving its entry ID and sensor unique IDs. An endpoint assigned to another entry is rejected. This does not authenticate a replacement physical device; the stream's `mac` parameter is not treated as a verified Ethernet MAC address.
 
+## Raw TCP forwarding
+
+The entry's **Configure** action provides optional **Raw TCP forwarding**, disabled by default. Enable it on the instance connected to the EP20, choose an explicit local private/loopback bind IP and an unused port (1024–65535; default 2323), and enter the allowed recipient IPs separated by commas. The address must exist on the HA host/container. Wildcard binds, public IPs and hostnames are rejected. Changes reload this entry; existing entry and entity IDs remain unchanged. A port conflict or unavailable bind address fails setup rather than silently changing the listener. Multiple entries need distinct listening endpoints.
+
+On the receiving instance, use the sender's reachable IP and listen port in the existing endpoint config flow. Only the sender connects to the EP20. The reachability probe and persistent receiving client open separate connections. A listener accepts clients only while its upstream stream is connected; a reachability probe alone does not prove that measurements will arrive.
+
+This is an **unencrypted, one-way raw TCP socket without login or TLS**. It exposes the original stream, including bytes ignored by the parser, device identifiers and potentially configuration data. The exact IP allowlist is an access restriction, not cryptographic authentication. Use a trusted isolated network, restrict the port to recipients with a host/network firewall, and do not forward it to the Internet. With HA containers, verify the actual source IP seen by the listener; NAT can make an allowlisted address represent multiple devices. No raw bytes are retained for replay or included in diagnostics.
+
+New clients wait for the next `???` boundary; the incomplete initial fragment is discarded. From that marker onward the received bytes are forwarded unchanged, before parsing, without preserving TCP read/packet boundaries. There is no history or initial measurement snapshot. At most four clients share each listener. Each client has a 64 KiB application queue plus one sending chunk of at most 4 KiB; a full queue or five-second send timeout disconnects that client without blocking the upstream reader. OS transport buffers are additional and use asyncio defaults. Client input closes that socket and is never passed upstream. Upstream EOF/error/timeout disconnects all recipients and discards pending data; reconnect starts a new stream. Unload and HA shutdown close listener, recipients and tasks. The receiver uses the existing reconnect delay and measurement-age handling.
+
 ## Sensors and mapping confidence
 
 There are **27 sensors: 20 enabled by default, 7 disabled**. Four unresolved fields (z59, z71, z96, z158) remain unitless, unscaled raw integers and disabled by default. Three further sensors are disabled named duplicates. Existing registry choices are retained during updates.

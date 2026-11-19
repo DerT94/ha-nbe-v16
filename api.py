@@ -3,11 +3,17 @@
 from __future__ import annotations
 
 import asyncio
+from dataclasses import dataclass, field
+from ipaddress import ip_address
 import re
 from typing import TYPE_CHECKING
 from urllib.parse import parse_qs, urlparse
 
 from .const import (
+    CONF_RAW_TCP_BIND,
+    CONF_RAW_TCP_CLIENTS,
+    CONF_RAW_TCP_ENABLED,
+    CONF_RAW_TCP_PORT,
     CONNECT_TIMEOUT,
     LOGGER,
     MEASUREMENT_MAX_AGE,
@@ -44,6 +50,139 @@ _ENDPOINTS_IGNORED = {"/v16dev/events2.php", "/v16dev/setup.php"}
 _Z_KEY_RE = re.compile(r"z[0-9]+")
 _Z_VALUE_RE = re.compile(r"[+-]?[0-9]+")
 
+# Per-client application queue: at most 64 KiB plus one 4 KiB send.
+_RAW_QUEUE_CHUNKS = 16
+_RAW_MAX_CLIENTS = 4
+_RAW_DRAIN_TIMEOUT = 5.0
+
+
+def raw_tcp_settings(options: dict) -> tuple[str, int, frozenset[str]]:
+    """Validate explicit local addresses; never resolve names or bind wildcards."""
+    bind = ip_address(options.get(CONF_RAW_TCP_BIND, "127.0.0.1"))
+    port = int(options.get(CONF_RAW_TCP_PORT, 2323))
+    clients = frozenset(
+        str(ip_address(value.strip()))
+        for value in options.get(CONF_RAW_TCP_CLIENTS, "127.0.0.1").split(",")
+    )
+    if not clients or len(clients) > 16 or not 1024 <= port <= 65535:
+        raise ValueError("Invalid raw TCP port or client list")
+    for address in (bind, *(ip_address(value) for value in clients)):
+        if (not address.is_private or address.is_unspecified
+                or address.is_multicast or (address.is_reserved and not address.is_loopback)
+                or getattr(address, "scope_id", None)):
+            raise ValueError("Raw TCP requires explicit private or loopback IPs")
+    return str(bind), port, clients
+
+
+@dataclass(eq=False)
+class _RawPeer:
+    reader: asyncio.StreamReader
+    writer: asyncio.StreamWriter
+    queue: asyncio.Queue[bytes] = field(
+        default_factory=lambda: asyncio.Queue(_RAW_QUEUE_CHUNKS)
+    )
+    task: asyncio.Task[None] | None = None
+    synchronized: bool = False
+    tail: bytes = b""
+
+
+class _RawTCPForwarder:
+    """One-way bounded fan-out. All socket lifecycle stays in this module."""
+
+    def __init__(self, allowed: frozenset[str]) -> None:
+        self.allowed = allowed
+        self.server: asyncio.Server | None = None
+        self.connected = False
+        self.peers: set[_RawPeer] = set()
+        self.tasks: set[asyncio.Task[None]] = set()
+
+    def accept(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
+        """Reject before allocating sender tasks or buffering upstream data."""
+        remote = writer.get_extra_info("peername")
+        if (not self.connected or not remote or remote[0] not in self.allowed
+                or len(self.tasks) >= _RAW_MAX_CLIENTS):
+            # No application bytes have been queued for denied clients.
+            writer.close()
+            return
+        peer = _RawPeer(reader, writer)
+        self.peers.add(peer)
+        peer.task = asyncio.create_task(self._serve(peer))
+        self.tasks.add(peer.task)
+        peer.task.add_done_callback(self.tasks.discard)
+
+    def _drop(self, peer: _RawPeer) -> None:
+        self.peers.discard(peer)
+        # Discard queued transport bytes as well as the application queue.
+        peer.writer.transport.abort()
+        if peer.task is not None and not peer.task.cancelling():
+            peer.task.cancel()
+
+    def disconnect(self) -> None:
+        """Close the current stream epoch, including queued unsent fragments."""
+        self.connected = False
+        for peer in tuple(self.peers):
+            self._drop(peer)
+
+    def publish(self, raw: bytes) -> None:
+        """Never await downstream I/O in the upstream reader/parser path."""
+        for peer in tuple(self.peers):
+            data = raw
+            if not peer.synchronized:
+                data = peer.tail + raw
+                marker = data.find(_FRAME_MARKER)
+                if marker < 0:
+                    peer.tail = data[-2:]
+                    continue
+                # Start at the next genuine boundary, with original bytes only.
+                data = data[marker:]
+                peer.tail = b""
+                peer.synchronized = True
+            # A split marker may add two bytes to an otherwise full read.
+            for offset in range(0, len(data), _READ_CHUNK_BYTES):
+                try:
+                    peer.queue.put_nowait(data[offset:offset + _READ_CHUNK_BYTES])
+                except asyncio.QueueFull:
+                    self._drop(peer)
+                    break
+
+    async def _serve(self, peer: _RawPeer) -> None:
+        async def send() -> None:
+            while True:
+                peer.writer.write(await peer.queue.get())
+                await asyncio.wait_for(peer.writer.drain(), _RAW_DRAIN_TIMEOUT)
+
+        # EOF or even a single incoming byte ends the one-way socket.
+        incoming = asyncio.create_task(peer.reader.read(1))
+        sender = asyncio.create_task(send())
+        try:
+            done, _ = await asyncio.wait(
+                (incoming, sender), return_when=asyncio.FIRST_COMPLETED
+            )
+            for task in done:
+                task.result()
+        except (OSError, TimeoutError):
+            pass
+        finally:
+            self.peers.discard(peer)
+            incoming.cancel()
+            sender.cancel()
+            await asyncio.gather(incoming, sender, return_exceptions=True)
+            peer.writer.close()
+            try:
+                await asyncio.wait_for(peer.writer.wait_closed(), 2.0)
+            except (OSError, TimeoutError):
+                peer.writer.transport.abort()
+
+    async def stop(self) -> None:
+        # wait_closed() waits for active connections, so close peers first.
+        if self.server is not None:
+            self.server.close()
+        self.disconnect()
+        await asyncio.gather(*tuple(self.tasks), return_exceptions=True)
+        if self.server is not None:
+            await self.server.wait_closed()
+            self.server = None
+
 
 class EP20Client:
     """Persistent async TCP client that reads the EP20 UART stream.
@@ -68,6 +207,18 @@ class EP20Client:
         self._writer: asyncio.StreamWriter | None = None
         self._data_timeout: asyncio.TimerHandle | None = None
         self._connection_lost = False
+        self._forwarder: _RawTCPForwarder | None = None
+
+    async def start_forwarding(self, options: dict) -> None:
+        """Open an explicitly enabled raw TCP listener before starting the reader."""
+        if not options.get(CONF_RAW_TCP_ENABLED, False):
+            return
+        bind, port, allowed = raw_tcp_settings(options)
+        forwarder = _RawTCPForwarder(allowed)
+        forwarder.server = await asyncio.start_server(
+            forwarder.accept, bind, port, limit=1024
+        )
+        self._forwarder = forwarder
 
     async def run(self) -> None:
         """Connect to the EP20 and read the UART stream indefinitely.
@@ -135,6 +286,9 @@ class EP20Client:
         self._running = False
         self._stop_event.set()
         self._invalidate_data(ConnectionError("EP20 reader stopped"))
+        if self._forwarder is not None:
+            await self._forwarder.stop()
+            self._forwarder = None
         if self._writer is not None:
             try:
                 self._writer.close()
@@ -168,6 +322,8 @@ class EP20Client:
             timeout=CONNECT_TIMEOUT,
         )
         self._writer = writer
+        if self._forwarder is not None:
+            self._forwarder.connected = True
         if self._connection_lost:
             LOGGER.info(
                 "NBE V16: TCP connection to %s:%s restored",
@@ -196,6 +352,8 @@ class EP20Client:
                     )
                     break
 
+                if self._forwarder is not None:
+                    self._forwarder.publish(raw)
                 buffer += raw
                 while _FRAME_MARKER in buffer:
                     frame, buffer = buffer.split(_FRAME_MARKER, 1)
@@ -217,6 +375,8 @@ class EP20Client:
                 if discarding:
                     buffer = buffer[-(len(_FRAME_MARKER) - 1):]
         finally:
+            if self._forwarder is not None:
+                self._forwarder.disconnect()
             self._writer = None
             try:
                 writer.close()

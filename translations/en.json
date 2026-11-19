@@ -3,35 +3,52 @@
     "step": {
       "user": {
         "title": "Set up NBE V16 Pellet Boiler",
-        "description": "Enter the IP address and TCP port of the EP20 module. Home Assistant will connect as a TCP client to the EP20 Telnet port and passively read the UART data stream. The EP20 factory configuration remains unchanged.",
+        "description": "Enter the IP address and TCP port of the EP20 or a raw TCP forwarding socket. Home Assistant connects as a TCP client and passively reads the UART byte stream without sending application data.",
         "data": {
           "host": "IP Address",
           "port": "TCP Port"
         },
         "data_description": {
-          "host": "IP address of the EP20 module, e.g. 192.168.1.100",
-          "port": "Telnet port of the EP20 module (default: 23)"
+          "host": "IP address of the EP20 or raw TCP forwarding socket",
+          "port": "TCP endpoint port (EP20 default: 23)"
         }
       },
       "reconfigure": {
-        "title": "Change EP20 connection",
-        "description": "Enter the new IP address and TCP port of the same EP20 module. Existing entities are retained.",
+        "title": "Change TCP endpoint",
+        "description": "Enter the IP address and TCP port for the same boiler's stream, directly from the EP20 or from raw TCP forwarding. Existing entities are retained.",
         "data": {
           "host": "IP Address",
           "port": "TCP Port"
         },
         "data_description": {
-          "host": "IP address of the EP20 module, e.g. 192.168.1.100",
-          "port": "Telnet port of the EP20 module (default: 23)"
+          "host": "IP address of the EP20 or raw TCP forwarding socket",
+          "port": "TCP endpoint port (EP20 default: 23)"
         }
       }
     },
     "error": {
-      "host_required": "Please enter the IP address of the EP20 module.",
-      "cannot_connect": "Cannot connect to the EP20 module at the given IP address and TCP port."
+      "host_required": "Please enter the TCP endpoint IP address.",
+      "cannot_connect": "Cannot connect to the TCP endpoint at the given IP address and port."
     },
     "abort": {
       "already_configured": "This boiler is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Raw TCP forwarding",
+        "description": "Expose the received UART bytes through a one-way TCP socket. Disabled by default. Unencrypted and without login; raw data can include device identifiers and setup data. Bind to an explicit private or loopback IP and allow only the recipient IPs (comma separated, maximum 16). Restrict the port with your firewall; never expose it to the Internet. The receiving integration uses this address and port as its TCP endpoint. Saving reloads this entry.",
+        "data": {
+          "raw_tcp_enabled": "Enable raw TCP forwarding",
+          "raw_tcp_bind": "Local bind IP address",
+          "raw_tcp_port": "Local TCP listen port",
+          "raw_tcp_clients": "Allowed client IP addresses"
+        }
+      }
+    },
+    "error": {
+      "invalid_raw_tcp": "Use explicit private or loopback IP addresses, 1–16 client IPs separated by commas, and a TCP port from 1024 to 65535. Wildcard addresses and hostnames are not accepted."
     }
   },
   "entity": {

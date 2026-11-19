@@ -3,35 +3,52 @@
     "step": {
       "user": {
         "title": "NBE V16 Pelletkessel einrichten",
-        "description": "Gib die IP-Adresse und den TCP-Port des EP20-Moduls ein. Home Assistant verbindet sich als TCP-Client und liest den UART-Datenstrom passiv mit. Die Werkskonfiguration des EP20 bleibt unverändert.",
+        "description": "Gib die IP-Adresse und den TCP-Port des EP20 oder eines Sockets zur TCP-Rohdatenweitergabe ein. Home Assistant verbindet sich als TCP-Client und liest den UART-Bytestrom passiv, ohne Anwendungsdaten zu senden.",
         "data": {
           "host": "IP-Adresse",
           "port": "TCP-Port"
         },
         "data_description": {
-          "host": "IP-Adresse des EP20-Moduls, z.B. 192.168.1.100",
-          "port": "Telnet-Port des EP20-Moduls (Standard: 23)"
+          "host": "IP-Adresse des EP20 oder des Sockets zur TCP-Rohdatenweitergabe",
+          "port": "Port des TCP-Endpunkts (EP20-Standard: 23)"
         }
       },
       "reconfigure": {
-        "title": "EP20-Verbindung ändern",
-        "description": "Gib die neue IP-Adresse und den TCP-Port desselben EP20-Moduls ein. Bestehende Entitäten bleiben erhalten.",
+        "title": "TCP-Endpunkt ändern",
+        "description": "Gib IP-Adresse und TCP-Port für den Datenstrom desselben Kessels ein, direkt vom EP20 oder über TCP-Rohdatenweitergabe. Bestehende Entitäten bleiben erhalten.",
         "data": {
           "host": "IP-Adresse",
           "port": "TCP-Port"
         },
         "data_description": {
-          "host": "IP-Adresse des EP20-Moduls, z.B. 192.168.1.100",
-          "port": "Telnet-Port des EP20-Moduls (Standard: 23)"
+          "host": "IP-Adresse des EP20 oder des Sockets zur TCP-Rohdatenweitergabe",
+          "port": "Port des TCP-Endpunkts (EP20-Standard: 23)"
         }
       }
     },
     "error": {
-      "host_required": "Bitte die IP-Adresse des EP20-Moduls eingeben.",
-      "cannot_connect": "Verbindung zum EP20-Modul unter der angegebenen IP-Adresse und dem TCP-Port nicht möglich."
+      "host_required": "Bitte die IP-Adresse des TCP-Endpunkts eingeben.",
+      "cannot_connect": "Verbindung zum TCP-Endpunkt unter der angegebenen IP-Adresse und dem Port nicht möglich."
     },
     "abort": {
       "already_configured": "Dieser Kessel ist bereits konfiguriert."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "TCP-Rohdatenweitergabe",
+        "description": "Empfangene UART-Bytes über einen einseitigen TCP-Socket weitergeben. Standardmäßig ausgeschaltet. Unverschlüsselt und ohne Anmeldung; Rohdaten können Gerätekennungen und Konfigurationsdaten enthalten. Eine konkrete private oder Loopback-IP als Bind-Adresse und ausschließlich die Empfänger-IPs freigeben (kommagetrennt, höchstens 16). Zugriff zusätzlich per Firewall begrenzen; den Port niemals ins Internet freigeben. Die empfangende Integration verwendet diese Adresse und diesen Port als TCP-Endpunkt. Speichern lädt diesen Eintrag neu.",
+        "data": {
+          "raw_tcp_enabled": "TCP-Rohdatenweitergabe aktivieren",
+          "raw_tcp_bind": "Lokale Bind-IP-Adresse",
+          "raw_tcp_port": "Lokaler TCP-Listen-Port",
+          "raw_tcp_clients": "Erlaubte Client-IP-Adressen"
+        }
+      }
+    },
+    "error": {
+      "invalid_raw_tcp": "Konkrete private oder Loopback-IP-Adressen, 1–16 kommagetrennte Client-IPs und einen TCP-Port von 1024 bis 65535 verwenden. Wildcard-Adressen und Hostnamen sind nicht erlaubt."
     }
   },
   "entity": {

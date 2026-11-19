@@ -20,6 +20,10 @@ DEVICE_MODEL = "V16"
 # Config entry keys
 CONF_HOST = "host"
 CONF_PORT = "port"
+CONF_RAW_TCP_ENABLED = "raw_tcp_enabled"
+CONF_RAW_TCP_BIND = "raw_tcp_bind"
+CONF_RAW_TCP_PORT = "raw_tcp_port"
+CONF_RAW_TCP_CLIENTS = "raw_tcp_clients"
 
 # Default TCP connection parameters for the EP20 Telnet port
 DEFAULT_PORT = 23
