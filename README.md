@@ -27,7 +27,7 @@ New clients wait for the next `???` boundary; the incomplete initial fragment is
 
 ## Sensors and mapping confidence
 
-There are **27 sensors: 20 enabled by default, 7 disabled**. Four unresolved fields (z59, z71, z96, z158) remain unitless, unscaled raw integers and disabled by default. Three further sensors are disabled named duplicates. Existing registry choices are retained during updates.
+There are **27 sensors: 21 enabled by default, 6 disabled**. Three unresolved fields (z59, z71, z96) remain unitless, unscaled raw integers and disabled by default. Three further sensors are disabled named duplicates. Existing registry choices are retained during updates.
 
 | Enabled sensor | Z-key | Unit / conversion |
 | --- | --- | --- |
@@ -38,6 +38,7 @@ There are **27 sensors: 20 enabled by default, 7 disabled**. Four unresolved fie
 | Oxygen | z05 | %, raw ÷ 10 |
 | Hopper content | z18 | %, raw unchanged |
 | Total consumption | z159 | kg, raw unchanged |
+| Pellet consumption last 24 hours | z158 | kg, raw ÷10; measurement, may decrease |
 | Drop shaft temperature | z03 | °C, raw ÷ 10 |
 | Power | z00 | %, raw unchanged |
 | Power output | z01 | kW, raw ÷ 10 |

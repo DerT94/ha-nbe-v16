@@ -144,7 +144,7 @@ Z_VALUE_METADATA: Final[tuple[ZValueMeta, ...]] = (
     ZValueMeta("z18", "Hopper Content", "%", 1.0, None, "measurement"),
 
     # Consumption
-    ZValueMeta("z158", "Z-value z158 (unverified)", None, 1.0, None, None, enabled_by_default=False),
+    ZValueMeta("z158", "Pellet Consumption 24h", "kg", 10.0, None, "measurement"),
     ZValueMeta("z159", "Consumption Total", "kg", 1.0, None, "total_increasing"),
 
     # Fan

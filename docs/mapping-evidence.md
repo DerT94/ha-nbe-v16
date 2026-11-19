@@ -145,3 +145,20 @@ restoring a scale does not rescale stored raw history.
 This is not a production release or a claim of actual Home Assistant UI or
 recorder compatibility testing. Local tests exercise real entity conversion
 through framework doubles, including invalid/missing data and stable IDs.
+
+## Adopted z158 mapping (19 November 2026)
+
+The user adopted z158 as Pellet Consumption 24h: divide raw by 10, kg,
+measurement, enabled by default. Raw 29 becomes 2.9 kg. Measurement permits
+decreases without treating them as counter resets. This supersedes earlier
+raw/unscaled statements for z158 above.
+
+Evidence: 28/40 exact named Consumption 24h matches, eleven differences of
+0.1 and one of 0.2; a later user-observed pair was raw 29 and web 2.9 kg.
+The exact time window and reset rules remain unverified. Existing unique IDs
+and registry choices persist; previously disabled sensors stay disabled.
+Old raw history is not converted. No live access or deployment was performed.
+
+Offline verification: entity/diagnostic suite 10/10 and parser suite 23/23
+passed with Python 3.12.14. The new conversion test failed first (29 vs 2.9)
+and passed after the metadata change. Tests remain in local acceptance files.

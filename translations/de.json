@@ -108,7 +108,7 @@
         "name": "Silofüllstand"
       },
       "z158": {
-        "name": "Z-Wert z158 (unbestätigt)"
+        "name": "Pelletverbrauch letzte 24 Stunden"
       },
       "z159": {
         "name": "Gesamtverbrauch"
