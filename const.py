@@ -20,6 +20,7 @@ DEVICE_MODEL = "V16"
 # Config entry keys
 CONF_HOST = "host"
 CONF_PORT = "port"
+CONF_DEVELOPER_MODE = "developer_mode"
 CONF_RAW_TCP_ENABLED = "raw_tcp_enabled"
 CONF_RAW_TCP_BIND = "raw_tcp_bind"
 CONF_RAW_TCP_PORT = "raw_tcp_port"

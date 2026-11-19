@@ -27,7 +27,11 @@ New clients wait for the next `???` boundary; the incomplete initial fragment is
 
 ## Sensors and mapping confidence
 
-There are **27 sensors: 21 enabled by default, 6 disabled**. Three unresolved fields (z59, z71, z96) remain unitless, unscaled raw integers and disabled by default. Three further sensors are disabled named duplicates. Existing registry choices are retained during updates.
+Normal mode creates only the primary sensors marked enabled in `Z_VALUE_METADATA`. Duplicate and unverified sensors previously disabled by default are excluded entirely.
+
+Enable **Developer mode** with the switch during initial setup or later through **Reconfigure**. It creates all named sensors and discovers every additional numeric Z-key as measurements arrive, including keys first seen in later frames. Known sensors retain their names, conversions and unique IDs. Unknown sensors are named after their exact key, such as `z96`, and expose unitless, unscaled integers without an assumed statistics class. All sensors are enabled by default in developer mode; existing integration-disabled sensors are enabled, while explicit user disabling is respected. Each entry discovers its own keys independently.
+
+Turning developer mode off reloads the entry and removes its additional Z-value entities from the entity registry, including previously disabled duplicates. Normal sensor IDs are preserved. Extra entities lose custom registry settings such as renamed entity IDs when removed; enabling developer mode again recreates them with the same unique IDs. This does not erase recorder history or statistics. State history is recorded according to your HA Recorder configuration and retention; exclusions still apply. Unknown fields have state history, but no assumed long-term statistics.
 
 | Enabled sensor | Z-key | Unit / conversion |
 | --- | --- | --- |
@@ -55,7 +59,7 @@ Eight restored fields match named references across 40 local paired snapshots; s
 
 ## Update and remove
 
-Before updating, back up HA and review the mapping/statistics compatibility notes. Replace the integration files from one reviewed revision, remove stale integration source files that revision no longer contains, and restart HA. Preserve the configured entry to retain entity identities. Review existing enabled disputed sensors: changing a default does not disable existing registry entries. Old statistics are not converted or deleted automatically.
+Before updating, back up HA and review the mapping/statistics compatibility notes. Replace the integration files from one reviewed revision, remove stale integration source files that revision no longer contains, and restart HA. Preserve the configured entry to retain entity identities. Review developer mode before updating: normal mode removes extra Z-value entities from the registry, including previously enabled disputed sensors. Old statistics are not converted or deleted automatically.
 
 To remove the integration, delete its entry in **Settings → Devices & services**. After removing all NBE V16 entries, delete only the installed `custom_components/nbe_v16/` directory if no longer needed, then restart HA. Removing an entry does not request erasure of recorder history or statistics.
 

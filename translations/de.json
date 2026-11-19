@@ -6,23 +6,27 @@
         "description": "Gib die IP-Adresse und den TCP-Port des EP20 oder eines Sockets zur TCP-Rohdatenweitergabe ein. Home Assistant verbindet sich als TCP-Client und liest den UART-Bytestrom passiv, ohne Anwendungsdaten zu senden.",
         "data": {
           "host": "IP-Adresse",
-          "port": "TCP-Port"
+          "port": "TCP-Port",
+          "developer_mode": "Developer-Modus"
         },
         "data_description": {
           "host": "IP-Adresse des EP20 oder des Sockets zur TCP-Rohdatenweitergabe",
-          "port": "Port des TCP-Endpunkts (EP20-Standard: 23)"
+          "port": "Port des TCP-Endpunkts (EP20-Standard: 23)",
+          "developer_mode": "Alle empfangenen Z-Werte als standardmäßig aktive Sensoren erfassen. Unbekannte Werte heißen z… und bleiben Rohwerte ohne Einheit. Beim Ausschalten werden die zusätzlichen Entitäten aus der Registry entfernt; deren individuelle Einstellungen gehen verloren. Recorder-Einstellungen bestimmen die Historienaufzeichnung."
         }
       },
       "reconfigure": {
-        "title": "TCP-Endpunkt ändern",
-        "description": "Gib IP-Adresse und TCP-Port für den Datenstrom desselben Kessels ein, direkt vom EP20 oder über TCP-Rohdatenweitergabe. Bestehende Entitäten bleiben erhalten.",
+        "title": "TCP-Endpunkt und Developer-Modus ändern",
+        "description": "TCP-Endpunkt für denselben Kessel und Developer-Modus konfigurieren. Speichern lädt den Eintrag neu. Die normalen Sensoren behalten ihre Identität.",
         "data": {
           "host": "IP-Adresse",
-          "port": "TCP-Port"
+          "port": "TCP-Port",
+          "developer_mode": "Developer-Modus"
         },
         "data_description": {
           "host": "IP-Adresse des EP20 oder des Sockets zur TCP-Rohdatenweitergabe",
-          "port": "Port des TCP-Endpunkts (EP20-Standard: 23)"
+          "port": "Port des TCP-Endpunkts (EP20-Standard: 23)",
+          "developer_mode": "Alle empfangenen Z-Werte als standardmäßig aktive Sensoren erfassen. Unbekannte Werte heißen z… und bleiben Rohwerte ohne Einheit. Beim Ausschalten werden die zusätzlichen Entitäten aus der Registry entfernt; deren individuelle Einstellungen gehen verloren. Recorder-Einstellungen bestimmen die Historienaufzeichnung."
         }
       }
     },

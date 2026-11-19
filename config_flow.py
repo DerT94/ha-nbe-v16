@@ -11,6 +11,7 @@ from homeassistant.helpers import selector
 
 from .api import raw_tcp_settings
 from .const import (
+    CONF_DEVELOPER_MODE,
     CONF_HOST, CONF_PORT, DEFAULT_PORT, DOMAIN, LOGGER,
     CONF_RAW_TCP_ENABLED, CONF_RAW_TCP_BIND, CONF_RAW_TCP_PORT, CONF_RAW_TCP_CLIENTS,
 )
@@ -62,6 +63,9 @@ class NbeV16ConfigFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             host: str = user_input[CONF_HOST].strip()
             port: int = int(user_input[CONF_PORT])
+            developer_mode: bool = user_input.get(
+                CONF_DEVELOPER_MODE, defaults.get(CONF_DEVELOPER_MODE, False)
+            )
 
             if not host:
                 errors[CONF_HOST] = "host_required"
@@ -98,7 +102,10 @@ class NbeV16ConfigFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                         return self.async_update_reload_and_abort(
                             entry,
                             unique_id=unique_id,
-                            data_updates={CONF_HOST: host, CONF_PORT: port},
+                            data_updates={
+                                CONF_HOST: host, CONF_PORT: port,
+                                CONF_DEVELOPER_MODE: developer_mode,
+                            },
                             reload_even_if_entry_is_unchanged=False,
                         )
                     await self.async_set_unique_id(unique_id)
@@ -109,13 +116,20 @@ class NbeV16ConfigFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     )
                     return self.async_create_entry(
                         title=f"NBE V16 Boiler ({host})",
-                        data={CONF_HOST: host, CONF_PORT: port},
+                        data={
+                            CONF_HOST: host, CONF_PORT: port,
+                            CONF_DEVELOPER_MODE: developer_mode,
+                        },
                     )
 
         return self.async_show_form(
             step_id=step_id,
             data_schema=vol.Schema(
                 {
+                    vol.Required(
+                        CONF_DEVELOPER_MODE,
+                        default=(user_input or defaults).get(CONF_DEVELOPER_MODE, False),
+                    ): selector.BooleanSelector(),
                     vol.Required(
                         CONF_HOST,
                         default=(user_input or defaults).get(CONF_HOST, ""),

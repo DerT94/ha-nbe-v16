@@ -6,23 +6,27 @@
         "description": "Enter the IP address and TCP port of the EP20 or a raw TCP forwarding socket. Home Assistant connects as a TCP client and passively reads the UART byte stream without sending application data.",
         "data": {
           "host": "IP Address",
-          "port": "TCP Port"
+          "port": "TCP Port",
+          "developer_mode": "Developer mode"
         },
         "data_description": {
           "host": "IP address of the EP20 or raw TCP forwarding socket",
-          "port": "TCP endpoint port (EP20 default: 23)"
+          "port": "TCP endpoint port (EP20 default: 23)",
+          "developer_mode": "Create enabled sensors for every received Z-value. Unknown values are named z… and remain unitless raw integers. Turning this off removes the extra entities from the registry and discards their custom settings. Recorder settings determine history recording."
         }
       },
       "reconfigure": {
-        "title": "Change TCP endpoint",
-        "description": "Enter the IP address and TCP port for the same boiler's stream, directly from the EP20 or from raw TCP forwarding. Existing entities are retained.",
+        "title": "Change TCP endpoint and developer mode",
+        "description": "Configure the TCP endpoint for the same boiler and developer mode. Saving reloads this entry. Normal sensors retain their identity.",
         "data": {
           "host": "IP Address",
-          "port": "TCP Port"
+          "port": "TCP Port",
+          "developer_mode": "Developer mode"
         },
         "data_description": {
           "host": "IP address of the EP20 or raw TCP forwarding socket",
-          "port": "TCP endpoint port (EP20 default: 23)"
+          "port": "TCP endpoint port (EP20 default: 23)",
+          "developer_mode": "Create enabled sensors for every received Z-value. Unknown values are named z… and remain unitless raw integers. Turning this off removes the extra entities from the registry and discards their custom settings. Recorder settings determine history recording."
         }
       }
     },
