@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import re
 from dataclasses import dataclass, field
 from ipaddress import ip_address
-import re
 from typing import TYPE_CHECKING
 from urllib.parse import parse_qs, urlparse
 
@@ -221,7 +221,7 @@ class EP20Client:
     async def start_forwarding(self, options: dict) -> tuple[str, int] | None:
         """Open an explicitly enabled raw TCP listener before starting the reader."""
         if not options.get(CONF_RAW_TCP_ENABLED, False):
-            return
+            return None
         bind, port, allowed = raw_tcp_settings(options)
         forwarder = _RawTCPForwarder(allowed)
         forwarder.server = await asyncio.start_server(
@@ -295,7 +295,7 @@ class EP20Client:
         """
         self._running = False
         self._stop_event.set()
-        self._invalidate_data(ConnectionError("EP20 reader stopped"))
+        self._invalidate_data(ConnectionError("EP20 reader stopped"), planned_stop=True)
         if self._forwarder is not None:
             await self._forwarder.stop()
             self._forwarder = None
@@ -307,12 +307,15 @@ class EP20Client:
                 pass
             self._writer = None
 
-    def _invalidate_data(self, error: Exception) -> None:
+    def _invalidate_data(self, error: Exception, *, planned_stop: bool = False) -> None:
         """Mark measurements unavailable without replacing the last payload."""
         if self._data_timeout is not None:
             self._data_timeout.cancel()
             self._data_timeout = None
-        self._coordinator.async_set_update_error(error)
+        if planned_stop:
+            self._coordinator.async_set_stopped(error)
+        else:
+            self._coordinator.async_set_update_error(error)
 
     def _expire_data(self) -> None:
         """Expire measurements even when unrelated stream traffic continues."""
@@ -432,7 +435,7 @@ class EP20Client:
             return
 
         LOGGER.debug(
-            "NBE V16: non-GET frame (header fragment?) - skipped: %s", lines[:2]
+            "NBE V16: non-GET frame skipped (%d lines)", len(lines)
         )
 
     def _parse_opr_frame(self, url_part: str) -> None:

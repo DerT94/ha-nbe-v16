@@ -12,8 +12,15 @@ from homeassistant.helpers import selector
 from .api import raw_tcp_settings, validate_raw_tcp_listener
 from .const import (
     CONF_DEVELOPER_MODE,
-    CONF_HOST, CONF_PORT, DEFAULT_PORT, DOMAIN, LOGGER,
-    CONF_RAW_TCP_ENABLED, CONF_RAW_TCP_BIND, CONF_RAW_TCP_PORT, CONF_RAW_TCP_CLIENTS,
+    CONF_HOST,
+    CONF_PORT,
+    CONF_RAW_TCP_BIND,
+    CONF_RAW_TCP_CLIENTS,
+    CONF_RAW_TCP_ENABLED,
+    CONF_RAW_TCP_PORT,
+    DEFAULT_PORT,
+    DOMAIN,
+    LOGGER,
 )
 
 _VALIDATION_CONNECT_TIMEOUT = 5.0

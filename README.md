@@ -2,7 +2,7 @@
 
 A local, read-only integration for the NBE V16 pellet boiler through the EP20 UART stream over TCP, normally port 23. Each config entry has its own reader, coordinator and sensors. The integration sends no application data, Telnet negotiation or boiler commands and makes no cloud requests.
 
-**Work in progress. Not released for production use.** No actual Home Assistant target version has completed acceptance. Current local checks use Python 3.12.14 and simulated HA boundaries. They are not a supported-HA version declaration. Real setup/unload, shutdown, availability, translations and recorder compatibility must be verified on a fixed HA version before release.
+**Beta candidate 0.1.1b1.** Functional acceptance has been performed on Home Assistant Core 2026.11.2 / Python 3.14.10, including setup/unload, shutdown and restart, disconnect/reconnect, stale measurements, developer mode, Recorder and TCP forwarding. The minimum version declared for this beta is HA 2026.11.2; earlier versions have not completed acceptance. Long-term observation and visual dialog verification remain separate checks. This candidate is not a production release. See [the changelog](CHANGELOG.md).
 
 ## Install and configure
 
@@ -69,8 +69,9 @@ To remove the integration, delete its entry in **Settings → Devices & services
 - `???` completes a frame immediately, including across TCP reads. Clean EOF can complete a syntactically complete request; reset, timeout and cancellation discard unfinished data.
 - Frames over 32 KiB are discarded until the next marker. This is a local protection limit, not a documented EP20 maximum.
 - Disconnects make data unavailable; valid fresh measurements restore it. Measurements expire after 180 seconds without updates, a provisional limit based on a short passive observation. The independent read timeout is 60 seconds and reconnect delay 10 seconds. Manual refresh does not fetch data or renew its age.
+- Planned stop and unload notify sensor unavailability without reporting an outage error. Unexpected disconnects and expired measurements retain their error reporting.
 - Valid partial payloads replace previous data; absent keys have no value. Old fields are not merged into new updates.
-- Entry diagnostics contain availability, constant limits, counts and known present Z-keys. Endpoint details, MAC, raw values and exception messages are omitted. Debug logs are separate and should be reviewed before sharing.
+- Entry diagnostics contain availability, constant limits, counts and known present Z-keys. Raw TCP forwarding reports whether it is enabled and whether the listener is running (`disabled`, `listening`, or `not_listening`). An enabled listener that failed to bind reports `not_listening` while local measurements continue. Endpoint details, MAC, raw values and exception messages are omitted. Unrecognized frame contents are omitted from debug logs.
 - Hardware identity, long-term stability, all operating-state transitions and full HA/recorder compatibility remain outside completed local checks. There is no boiler control.
 
 The scripts in [tools/](tools/README.md) are historical, non-passive experiments, not integration dependencies or supported capture tools. Existing formatted example captures are not byte-faithful fixtures. Local harnesses and evidence stay in the gitignored `docs/local-abnahme/` directory under this project's acceptance workflow.

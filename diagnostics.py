@@ -7,7 +7,13 @@ from typing import TYPE_CHECKING
 
 from homeassistant.helpers import entity_registry as er
 
-from .const import CONF_DEVELOPER_MODE, DOMAIN, MEASUREMENT_MAX_AGE, Z_VALUE_METADATA
+from .const import (
+    CONF_DEVELOPER_MODE,
+    CONF_RAW_TCP_ENABLED,
+    DOMAIN,
+    MEASUREMENT_MAX_AGE,
+    Z_VALUE_METADATA,
+)
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -22,6 +28,12 @@ async def async_get_config_entry_diagnostics(
     coordinator = entry.runtime_data
     data = coordinator.data or {}
     developer_mode = entry.data.get(CONF_DEVELOPER_MODE, False)
+    forwarding_enabled = entry.options.get(CONF_RAW_TCP_ENABLED, False)
+    forwarding_status = (
+        "disabled" if not forwarding_enabled else
+        "listening" if coordinator.raw_tcp_endpoint is not None else
+        "not_listening"
+    )
     keys = {
         meta.key for meta in Z_VALUE_METADATA
         if developer_mode or meta.enabled_by_default
@@ -39,6 +51,10 @@ async def async_get_config_entry_diagnostics(
             ):
                 keys.add(key)
     return {
+        "raw_tcp_forwarding": {
+            "enabled": forwarding_enabled,
+            "status": forwarding_status,
+        },
         "developer_mode": developer_mode,
         "last_update_success": coordinator.last_update_success,
         "measurement_max_age_seconds": MEASUREMENT_MAX_AGE,

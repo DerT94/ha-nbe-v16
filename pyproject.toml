@@ -1,0 +1,13 @@
+[tool.ruff]
+target-version = "py312"
+extend-exclude = [".agents", "docs/local-abnahme", "tools"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "UP"]
+
+[tool.mypy]
+python_version = "3.14"
+follow_imports = "silent"
+ignore_missing_imports = true
+check_untyped_defs = true
+disallow_untyped_defs = true

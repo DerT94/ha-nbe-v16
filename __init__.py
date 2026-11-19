@@ -51,7 +51,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: NbeConfigEntry) -> bool:
             reader_task.cancel()
             try:
                 await asyncio.wait_for(reader_task, timeout=5.0)
-            except (asyncio.CancelledError, asyncio.TimeoutError):
+            except (TimeoutError, asyncio.CancelledError):
                 pass
 
         LOGGER.debug("NBE V16: TCP reader stopped for entry %s", entry.entry_id)

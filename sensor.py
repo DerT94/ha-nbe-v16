@@ -10,7 +10,6 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-
 from homeassistant.core import callback
 from homeassistant.helpers import entity_registry as er
 
@@ -164,5 +163,8 @@ class NbeZValueSensor(NbeEntity, SensorEntity):
         if self._meta.scale == 1.0:
             return raw_int
 
-        scaled = raw_int / self._meta.scale
+        try:
+            scaled = raw_int / self._meta.scale
+        except OverflowError:
+            return None
         return int(scaled) if scaled == int(scaled) else round(scaled, 2)

@@ -1,5 +1,6 @@
 {
   "name": "NBE V16 Pellet Boiler",
   "content_in_root": true,
+  "homeassistant": "2026.11.2",
   "render_readme": true
 }
