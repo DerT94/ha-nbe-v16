@@ -10,22 +10,21 @@ acceptance procedure. Their networking behavior has not been made passive.
 | `listen_http.ps1` | Opens a listener on all interfaces and sends HTTP responses; its instructions assume changing the EP20 HTTP target. | Displays decoded headers/body rather than storing the original TCP stream. |
 | `collect_stokercloud_data.ps1` | Contacts Stokercloud and the configured TCP endpoint; sends Telnet negotiation replies. | Splits each TCP chunk into lines without retaining the partial last line. Reconstructed frames can therefore depend on TCP fragmentation. |
 
-The collector now reconnects after a TCP read timeout, EOF, or a connection/read
-failure. `-ReadTimeoutSec` defaults to 180 seconds without received TCP bytes,
-`-ConnectTimeoutSec` to 15 seconds, and `-ReconnectDelaySec` to 10 seconds.
-Retries continue until the requested snapshot count is reached or the script is
-stopped. Incomplete frame lines are discarded on reconnect; saved snapshots,
-snapshot numbering, and the minimum snapshot interval are retained. The current
-client is disposed when collection exits. These limits apply to TCP transport,
-not to cloud calls or the time to assemble a complete frame while bytes continue
-arriving. An already running copy must be restarted to use this change; it does
-not automatically resume snapshots from an earlier process/session.
+## Collector behavior and evidence limits
 
-The collector's reconstructed frames must not be used as protocol fixtures or as
-proof of UART line boundaries. Before any future use as an evidence source, it
-would need complete buffering of partial lines and split Telnet sequences, tests
-of TCP fragmentation, and a documented capture/sanitization procedure. Existing
-snapshot correlations alone do not resolve the open sensor-mapping questions.
+The collector reconnects after TCP timeout, EOF or connection/read failure until
+the requested snapshot count is reached or it is stopped. Defaults are 180 seconds
+without TCP bytes, 15 seconds to connect and 10 seconds between attempts. These
+limits do not bound cloud calls or frame assembly while bytes continue arriving.
+On reconnect, incomplete lines are discarded while snapshots, numbering and the
+minimum snapshot interval remain. The client is disposed on exit. A new process
+does not automatically resume an earlier session's snapshots.
+
+Reconstructed frames are not protocol fixtures or proof of UART line boundaries.
+Reliable byte capture would require partial-line and split-Telnet buffering,
+fragmentation tests and a documented capture/sanitization procedure. Existing
+named-value correlations can inform [mapping evidence](../docs/mapping-evidence.md)
+within these limits; they do not resolve every physical meaning or unit.
 
 ## Credentials and captured data
 
@@ -45,9 +44,9 @@ single displayed line is insufficient.
 
 ## Current development workflow
 
-Use the integration's actual `api.py` through an offline harness with synthetic
-or sanitized data. Local acceptance scripts and results live in the gitignored
-`docs/local-abnahme/` directory. Passive live checks follow its test runbook and
-the authorization recorded there. Running any of these historical tools is not
-covered by that passive-test authorization. EP20 reconfiguration, cloud access,
-deployment and Home Assistant restarts require separate authorization.
+Offline harnesses use the integration's actual code with synthetic or sanitized
+data. Scripts, reports and the test runbook stay in the gitignored
+`docs/local-abnahme/` directory. Historical passive-test authorization does not
+cover running these tools. EP20 reconfiguration, cloud access, deployment and HA
+restarts require the corresponding explicit instruction. The [stream reference](../docs/ep20-stream.md)
+describes the integration's passive data path.

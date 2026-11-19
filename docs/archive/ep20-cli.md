@@ -1,3 +1,9 @@
+# Historical EP20 CLI reference
+
+Recorded commands for the Hi-Flying Eport Pro-EP20, firmware family V1.3x. The original German notes follow. Their scope is the observed device/firmware; they are not a general firmware compatibility guarantee.
+
+The integration only reads the UART stream and does not execute these commands. This archive includes configuration, reset and restart commands; it is not an installation or test procedure. See the [stream reference](../ep20-stream.md) for integration behavior.
+
 # EP20 CLI Reference – Hi-Flying Eport Pro-EP20
 
 **Hardware:** Hi-Flying Eport Pro-EP20 (32 MB RAM, Embedded Linux)  

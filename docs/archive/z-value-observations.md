@@ -1,14 +1,12 @@
-# NBE V16 – Z-Wert Mapping
+# Historische Z-Wert-Beobachtungen
 
-> Historische Test- und Mapping-Evidenz; die ursprünglichen Beobachtungen bleiben
-> erhalten. Ergänzungen und gezielte Neubewertungen einzelner Hypothesen vom
-> 19.11.2026 sowie der aktuelle Implementierungsstand stehen in der
-> [Mapping-Evidenz](mapping-evidence.md). Eine konstante neue Messung hebt
-> frühere dynamische Tests nicht auf.
+Dieses Archiv bewahrt ursprüngliche Messbeobachtungen und Hypothesen. Es ist keine aktuelle Sensorreferenz. Maßgeblich sind [Sensoren](../sensors.md) und [Mapping-Evidenz](../mapping-evidence.md).
 
-***
+Später korrigiert wurden insbesondere z01 (Leistung statt Zähler), z03 (Fallschacht statt Rücklauf), z10 (Hauptzustand), z24 (O2-Sollwert), z82–z84 (O2-Regelwerte), z121 (Gebläse) und z158 (24-h-Verbrauch statt Trip). z96 ist nicht belastbar als RPM zugeordnet. Weitere alte Behauptungen bleiben Hypothesen, soweit die aktuelle Evidenz sie nicht bestätigt.
 
-## ✅ Sicher zugewiesene Z-Werte
+Historische dynamische Beobachtungen bleiben Belege; konstante Werte in einer späteren Aufnahme heben sie nicht auf. Beschriftungen wie „bestätigt“ in den folgenden Originalnotizen bezeichnen den damaligen Erkenntnisstand. Die Collector-Grenzen stehen in der [Werkzeugreferenz](../../tools/README.md).
+
+## Damals als sicher eingestufte Zuordnungen
 
 Zuordnung durch exakte Wertkorrelation mit Livedata **und** Bestätigung über mehrere Snapshots mit Zustandsübergängen (Stopped → Ignition → Running → Cooling).
 Die Snapshots wurden mithilfe von collect_stokercloud_data.ps1 erstellt. 
@@ -31,7 +29,7 @@ Das Skript liest die Inhalte aus der Cloud aus.
 | `z158` | `pellet_consumption_trip` | Pelletverbrauch aktueller Trip | ÷10 | kg | Steigt während Betrieb, evtl. Reset pro Session |
 | `z159` | `pellet_consumption_total` | Pellet-Gesamtverbrauch (Lifetime) | ×1 | kg | Bestätigt via `hopperdata_4`, `total_increasing` |
 
-*** ✅ z40 State Mapping
+## Historische z40-Texte
 
 | z40 raw | Klartext                                              |
 | ------- | ----------------------------------------------------- |
@@ -61,7 +59,7 @@ Das Skript liest die Inhalte aus der Cloud aus.
 | 220     | No fire - out of pellets?                             |
 
 
-## ⚠️ Unsicher / Mehrdeutig zugewiesene Z-Werte
+## Damalige unsichere Zuordnungen
 
 Wertkorrelation plausibel, aber keine eindeutige Bestätigung durch Namens- oder Einheitsmatch in den Livedaten. Zuordnung basiert auf Verhaltensmuster über Zustandsübergänge.
 
@@ -79,7 +77,7 @@ Wertkorrelation plausibel, aber keine eindeutige Bestätigung durch Namens- oder
 
 ***
 
-## ❓ Offene Z-Werte mit Beobachtungen
+## Damals offene Z-Werte
 
 Keine plausible Zuordnung möglich. Werte sind entweder konstant, zu generisch (raw=100/0/1) oder zeigen kein eindeutiges Korrelationsmuster mit bekannten Livedaten.
 
@@ -136,5 +134,3 @@ Keine plausible Zuordnung möglich. Werte sind entweder konstant, zu generisch (
 | `z166`–`z167` | 0 | KONSTANT – nicht auswertbar |
 
 ***
-
-## Hinweise zur Weiterverwendung

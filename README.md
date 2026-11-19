@@ -1,80 +1,35 @@
 # NBE V16 for Home Assistant
 
-A local, read-only integration for the NBE V16 pellet boiler through the EP20 UART stream over TCP, normally port 23. Each config entry has its own reader, coordinator and sensors. The integration sends no application data, Telnet negotiation or boiler commands and makes no cloud requests.
+A local, read-only integration for NBE V16 pellet boilers through the EP20 UART stream over TCP. It sends no application data, Telnet replies or boiler commands and makes no cloud requests. Each configured endpoint has its own connection, coordinator and sensors.
 
-**Beta candidate 0.1.1b1.** Functional acceptance has been performed on Home Assistant Core 2026.11.2 / Python 3.14.10, including setup/unload, shutdown and restart, disconnect/reconnect, stale measurements, developer mode, Recorder and TCP forwarding. The minimum version declared for this beta is HA 2026.11.2; earlier versions have not completed acceptance. Long-term observation and visual dialog verification remain separate checks. This candidate is not a production release. See [the changelog](CHANGELOG.md).
+**Beta candidate 0.1.1b1**, minimum Home Assistant Core **2026.11.2**. Functional acceptance on HA 2026.11.2 / Python 3.14.10 covered setup/unload, shutdown and restart, disconnect/reconnect, stale measurements, developer mode, Recorder and TCP forwarding. Long-term observation and visual dialog verification remain open. This candidate is not a production release. See the [changelog](CHANGELOG.md).
 
 ## Install and configure
 
-1. Obtain this repository from a reviewed revision.
-2. In your HA configuration directory, create `custom_components/nbe_v16/`. This repository root is the integration source: copy its root `.py` files, `manifest.json`, `strings.json` and `translations/` there. Do not copy `.git`, `.agents`, `tools` or local test data.
-3. Restart Home Assistant to discover the custom integration.
-4. Open **Settings → Devices & services → Add integration → NBE V16 Pellet Boiler** and enter the existing EP20 IP address and TCP port.
+1. Obtain a reviewed revision of this repository.
+2. Create `custom_components/nbe_v16/` in your HA configuration directory. Copy the repository's root `.py` files, `manifest.json`, `strings.json` and `translations/` there.
+3. Restart Home Assistant.
+4. Open **Settings → Devices & services → Add integration → NBE V16 Pellet Boiler** and enter the EP20 address and TCP port, normally 23.
 
-The check proves TCP reachability only. Sensors remain unavailable until valid measurements arrive. The EP20 must already expose the UART stream as a TCP server; the integration does not reconfigure it. No YAML configuration, cloud account or extra Python runtime package is needed.
+The EP20 must already expose its UART stream as a TCP server. The setup check proves TCP reachability; sensors become available only after valid measurements arrive. No YAML configuration, cloud account or extra Python runtime package is needed.
 
-To change the address of the **same EP20**, use the entry's **Reconfigure** action. It updates the endpoint and reloads the same entry, preserving its entry ID and sensor unique IDs. An endpoint assigned to another entry is rejected. This does not authenticate a replacement physical device; the stream's `mac` parameter is not treated as a verified Ethernet MAC address.
+## Features and documentation
 
-## Raw TCP forwarding
+- **Sensors:** normal mode exposes primary measurements and operating states. See the [sensor reference](docs/sensors.md) for conversions and units.
+- **Developer mode:** additionally discovers raw Z-values. [Configuration](docs/configuration.md) explains activation and registry effects.
+- **TCP forwarding:** one HA instance can forward its EP20 stream to other readers. Setup and network restrictions are in [configuration](docs/configuration.md#raw-tcp-forwarding).
+- **Mapping confidence:** [mapping evidence](docs/mapping-evidence.md) separates established associations, uncertain interpretations and fields that cannot be resolved with the available installation.
+- **Technical behavior:** framing, reconnects, availability and forwarding limits are in the [stream reference](docs/ep20-stream.md).
 
-The entry's **Configure** action provides optional **Raw TCP forwarding**, disabled by default. Enable it on the instance connected to the EP20, choose an explicit local private/loopback bind IP and an unused port (1024–65535; default 2323), and enter the allowed recipient IPs separated by commas. The address must exist on the HA host/container. Wildcard binds, public IPs and hostnames are rejected. Changes reload this entry; existing entry and entity IDs remain unchanged. The options form rejects a bind address or port it cannot bind. If the listener fails during setup or reload, Home Assistant logs an error and continues reading the EP20 and updating sensors. Multiple entries need distinct listening endpoints.
-
-On the receiving instance, use the sender's reachable IP and listen port in the existing endpoint config flow. Only the sender connects to the EP20. The reachability probe and persistent receiving client open separate connections. A listener accepts clients only while its upstream stream is connected; a reachability probe alone does not prove that measurements will arrive.
-
-This is an **unencrypted, one-way raw TCP socket without login or TLS**. It exposes the original stream, including bytes ignored by the parser, device identifiers and potentially configuration data. The exact IP allowlist is an access restriction, not cryptographic authentication. Use a trusted isolated network, restrict the port to recipients with a host/network firewall, and do not forward it to the Internet. With HA containers, verify the actual source IP seen by the listener; NAT can make an allowlisted address represent multiple devices. No raw bytes are retained for replay or included in diagnostics.
-
-New clients wait for the next `???` boundary; the incomplete initial fragment is discarded. From that marker onward the received bytes are forwarded unchanged, before parsing, without preserving TCP read/packet boundaries. There is no history or initial measurement snapshot. At most four clients share each listener. Each client has a 64 KiB application queue plus one sending chunk of at most 4 KiB; a full queue or five-second send timeout disconnects that client without blocking the upstream reader. OS transport buffers are additional and use asyncio defaults. Client input closes that socket and is never passed upstream. Upstream EOF/error/timeout disconnects all recipients and discards pending data; reconnect starts a new stream. Unload and HA shutdown close listener, recipients and tasks. The receiver uses the existing reconnect delay and measurement-age handling.
-
-## Sensors and mapping confidence
-
-Normal mode creates only the primary sensors marked enabled in `Z_VALUE_METADATA`. Duplicate and unverified sensors previously disabled by default are excluded entirely.
-
-Enable **Developer mode** with the switch during initial setup or later through **Reconfigure**. It creates all named sensors and discovers every additional numeric Z-key as measurements arrive, including keys first seen in later frames. Known sensors retain their names, conversions and unique IDs. Unknown sensors are named after their exact key, such as `z96`, and expose unitless, unscaled integers without an assumed statistics class. All sensors are enabled by default in developer mode; existing integration-disabled sensors are enabled, while explicit user disabling is respected. Each entry discovers its own keys independently.
-
-Turning developer mode off reloads the entry and removes its additional Z-value entities from the entity registry, including previously disabled duplicates. Normal sensor IDs are preserved. Extra entities lose custom registry settings such as renamed entity IDs when removed; enabling developer mode again recreates them with the same unique IDs. This does not erase recorder history or statistics. State history is recorded according to your HA Recorder configuration and retention; exclusions still apply. Unknown fields have state history, but no assumed long-term statistics.
-
-| Enabled sensor | Z-key | Unit / conversion |
-| --- | --- | --- |
-| Boiler temperature | z02 | °C, raw ÷ 10 |
-| Flue gas temperature | z04 | °C, raw ÷ 10 |
-| Boiler setpoint | z25 | °C, raw ÷ 10 |
-| Outdoor temperature | z124 | °C, raw ÷ 10 |
-| Oxygen | z05 | %, raw ÷ 10 |
-| Hopper content | z18 | %, raw unchanged |
-| Total consumption | z159 | kg, raw unchanged |
-| Pellet consumption last 24 hours | z158 | kg, raw ÷10; measurement, may decrease |
-| Drop shaft temperature | z03 | °C, raw ÷ 10 |
-| Power | z00 | %, raw unchanged |
-| Power output | z01 | kW, raw ÷ 10 |
-| Oxygen setpoint | z24 | %, raw ÷ 10 |
-| Oxygen low / mid / high regulation | z82 / z83 / z84 | Unit unresolved, raw ÷ 100 |
-| Fan speed | z121 | %, raw unchanged |
-| State duration | z111 | s, raw unchanged |
-| Phase time remaining | z41 | s, raw unchanged |
-| Operating state | z10 | Observed English state text; unknown codes retain their number |
-| Combustion chamber pressure | z123 | Pa, raw unchanged |
-| Substate | z40 | Existing English text; unknown codes retain their number |
-
-Eight restored fields match named references across 40 local paired snapshots; state duration follows the observed main-state transitions. Power %, output kW, hopper %, fan % and pressure Pa are adopted with the user’s agreement and historical context; O2 regulation units remain unset. Main state and phase time remaining extend the earlier state/timer observations. Historical tests remain evidence; other existing mappings and status texts retain their behavior and documented verification gaps. See [mapping evidence and compatibility](docs/mapping-evidence.md) for disputed keys, missing evidence and statistics implications. Do not infer a physical meaning or unit from a disputed raw field. German and English sensor names are provided; native status values remain unchanged to preserve automation comparisons.
+German and English sensor names are available. Native status values remain English to preserve existing automation comparisons. Hardware identity and physical meanings of unknown Z-values are not inferred.
 
 ## Update and remove
 
-Before updating, back up HA and review the mapping/statistics compatibility notes. Replace the integration files from one reviewed revision, remove stale integration source files that revision no longer contains, and restart HA. Preserve the configured entry to retain entity identities. Review developer mode before updating: normal mode removes extra Z-value entities from the registry, including previously enabled disputed sensors. Old statistics are not converted or deleted automatically.
+Before updating, back up HA and read the [compatibility notes](docs/compatibility.md), especially when using developer entities or old statistics. Replace the integration files from one reviewed revision, remove stale source files no longer included, and restart HA. Preserve the configured entry to retain its identity.
 
-To remove the integration, delete its entry in **Settings → Devices & services**. After removing all NBE V16 entries, delete only the installed `custom_components/nbe_v16/` directory if no longer needed, then restart HA. Removing an entry does not request erasure of recorder history or statistics.
+To remove the integration, delete its entries in **Settings → Devices & services**. After removing all entries, delete the installed `custom_components/nbe_v16/` directory and restart HA. Removing entries does not request deletion of Recorder history or statistics.
 
-## Data handling and known limits
-
-- Only operational `/v16dev/opr.php` frames are parsed. Setup, events and unrelated endpoints are ignored. Numeric Z-keys with integer raw values qualify as measurements; MAC-only or malformed payloads do not refresh data.
-- `???` completes a frame immediately, including across TCP reads. Clean EOF can complete a syntactically complete request; reset, timeout and cancellation discard unfinished data.
-- Frames over 32 KiB are discarded until the next marker. This is a local protection limit, not a documented EP20 maximum.
-- Disconnects make data unavailable; valid fresh measurements restore it. Measurements expire after 180 seconds without updates, a provisional limit based on a short passive observation. The independent read timeout is 60 seconds and reconnect delay 10 seconds. Manual refresh does not fetch data or renew its age.
-- Planned stop and unload notify sensor unavailability without reporting an outage error. Unexpected disconnects and expired measurements retain their error reporting.
-- Valid partial payloads replace previous data; absent keys have no value. Old fields are not merged into new updates.
-- Entry diagnostics contain availability, constant limits, counts and known present Z-keys. Raw TCP forwarding reports whether it is enabled and whether the listener is running (`disabled`, `listening`, or `not_listening`). An enabled listener that failed to bind reports `not_listening` while local measurements continue. Endpoint details, MAC, raw values and exception messages are omitted. Unrecognized frame contents are omitted from debug logs.
-- Hardware identity, long-term stability, all operating-state transitions and full HA/recorder compatibility remain outside completed local checks. There is no boiler control.
-
-The scripts in [tools/](tools/README.md) are historical, non-passive experiments, not integration dependencies or supported capture tools. Existing formatted example captures are not byte-faithful fixtures. Local harnesses and evidence stay in the gitignored `docs/local-abnahme/` directory under this project's acceptance workflow.
+The scripts in [tools/](tools/README.md) are historical experiments with separate networking behavior. Local acceptance material is kept outside version control.
 
 ## License
 
