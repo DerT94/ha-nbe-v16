@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "NBE V16 Pelletkessel einrichten",
-        "description": "Gib die IP-Adresse und den TCP-Port des EP20 oder eines Sockets zur TCP-Rohdatenweitergabe ein. Home Assistant verbindet sich als TCP-Client und liest den UART-Bytestrom passiv, ohne Anwendungsdaten zu senden.",
+        "description": "Gib die IP-Adresse und den TCP-Port des EP20 oder eines Sockets zur TCP-Rohdatenweitergabe ein. Home Assistant verbindet sich als TCP-Client und liest den UART-Bytestrom passiv, ohne Anwendungsdaten zu senden. Die TCP-Rohdatenweitergabe kannst du nach der Einrichtung über das Zahnrad am Integrationseintrag aktivieren.",
         "data": {
           "host": "IP-Adresse",
           "port": "TCP-Port",
@@ -52,6 +52,7 @@
       }
     },
     "error": {
+      "raw_tcp_bind_failed": "Der TCP-Listener kann nicht geöffnet werden. Prüfe, ob die Bind-IP zu diesem Home-Assistant-System gehört und der Port auf dieser Adresse frei ist.",
       "invalid_raw_tcp": "Konkrete private oder Loopback-IP-Adressen, 1–16 kommagetrennte Client-IPs und einen TCP-Port von 1024 bis 65535 verwenden. Wildcard-Adressen und Hostnamen sind nicht erlaubt."
     }
   },
@@ -82,7 +83,7 @@
         "name": "Leistung"
       },
       "z59": {
-        "name": "Z-Wert z59 (unbestätigt)"
+        "name": "Leistung (z59)"
       },
       "z01": {
         "name": "Wärmeleistung"
@@ -119,9 +120,6 @@
       },
       "z121": {
         "name": "Lüfterleistung"
-      },
-      "z96": {
-        "name": "Z-Wert z96 (unbestätigt)"
       },
       "z123": {
         "name": "Brennkammerdruck"

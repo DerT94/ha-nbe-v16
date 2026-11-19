@@ -9,7 +9,7 @@ from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.helpers import selector
 
-from .api import raw_tcp_settings
+from .api import raw_tcp_settings, validate_raw_tcp_listener
 from .const import (
     CONF_DEVELOPER_MODE,
     CONF_HOST, CONF_PORT, DEFAULT_PORT, DOMAIN, LOGGER,
@@ -168,12 +168,20 @@ class NbeRawTCPOptionsFlow(config_entries.OptionsFlow):
                 except (ValueError, TypeError):
                     errors["base"] = "invalid_raw_tcp"
                 else:
-                    return self.async_create_entry(title="", data={
-                        CONF_RAW_TCP_ENABLED: True,
-                        CONF_RAW_TCP_BIND: bind,
-                        CONF_RAW_TCP_PORT: port,
-                        CONF_RAW_TCP_CLIENTS: ",".join(sorted(clients)),
-                    })
+                    runtime_data = getattr(self.config_entry, "runtime_data", None)
+                    active_endpoint = getattr(runtime_data, "raw_tcp_endpoint", None)
+                    try:
+                        if (bind, port) != active_endpoint:
+                            await validate_raw_tcp_listener(bind, port)
+                    except OSError:
+                        errors["base"] = "raw_tcp_bind_failed"
+                    else:
+                        return self.async_create_entry(title="", data={
+                            CONF_RAW_TCP_ENABLED: True,
+                            CONF_RAW_TCP_BIND: bind,
+                            CONF_RAW_TCP_PORT: port,
+                            CONF_RAW_TCP_CLIENTS: ",".join(sorted(clients)),
+                        })
             else:
                 return self.async_create_entry(
                     title="", data={**user_input, CONF_RAW_TCP_ENABLED: False}

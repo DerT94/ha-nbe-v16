@@ -33,6 +33,7 @@ class NbeDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
         # A TCP connection alone is not evidence of valid measurements.
         self.last_update_success = False
+        self.raw_tcp_endpoint: tuple[str, int] | None = None
 
     async def async_request_refresh(self) -> None:
         """Accept manual refresh without fetching or validating cached data.

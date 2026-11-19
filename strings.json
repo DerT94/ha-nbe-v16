@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Set up NBE V16 Pellet Boiler",
-        "description": "Enter the IP address and TCP port of the EP20 or a raw TCP forwarding socket. Home Assistant connects as a TCP client and passively reads the UART byte stream without sending application data.",
+        "description": "Enter the IP address and TCP port of the EP20 or a raw TCP forwarding socket. Home Assistant connects as a TCP client and passively reads the UART byte stream without sending application data. After setup, you can enable raw TCP forwarding using the gear icon next to the integration entry.",
         "data": {
           "host": "IP Address",
           "port": "TCP Port",
@@ -52,6 +52,7 @@
       }
     },
     "error": {
+      "raw_tcp_bind_failed": "Cannot open the TCP listener. Check that the bind IP belongs to this Home Assistant host and that the port is free on that address.",
       "invalid_raw_tcp": "Use explicit private or loopback IP addresses, 1–16 client IPs separated by commas, and a TCP port from 1024 to 65535. Wildcard addresses and hostnames are not accepted."
     }
   },
@@ -82,7 +83,7 @@
         "name": "Power"
       },
       "z59": {
-        "name": "Z-value z59 (unverified)"
+        "name": "Power (z59)"
       },
       "z01": {
         "name": "Power Output"
@@ -119,9 +120,6 @@
       },
       "z121": {
         "name": "Fan Speed"
-      },
-      "z96": {
-        "name": "Z-value z96 (unverified)"
       },
       "z123": {
         "name": "Combustion Chamber Pressure"

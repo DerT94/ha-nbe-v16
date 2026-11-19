@@ -36,6 +36,8 @@ Desktop.ini
 
 # Testing & Dev
 /docs/local-abnahme/
+# Local NBE language export
+/docs/uk.json
 .pytest_cache/
 htmlcov/
 .coverage

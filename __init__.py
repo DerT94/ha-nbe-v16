@@ -44,6 +44,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: NbeConfigEntry) -> bool:
         if _stop_called:
             return
         _stop_called = True
+        coordinator.raw_tcp_endpoint = None
 
         await client.stop()
         if reader_task is not None:
@@ -71,7 +72,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: NbeConfigEntry) -> bool:
 
     try:
         if entry.options.get(CONF_RAW_TCP_ENABLED, False):
-            await client.start_forwarding(dict(entry.options))
+            try:
+                coordinator.raw_tcp_endpoint = await client.start_forwarding(
+                    dict(entry.options)
+                )
+            except (OSError, ValueError, TypeError) as err:
+                LOGGER.error(
+                    "NBE V16: Raw TCP forwarding failed for entry %s: %s. "
+                    "The EP20 reader will still start",
+                    entry.entry_id,
+                    err,
+                )
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     except BaseException:
         await _async_stop_reader()

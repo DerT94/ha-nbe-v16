@@ -127,7 +127,7 @@ Z_VALUE_METADATA: Final[tuple[ZValueMeta, ...]] = (
 
     # Power
     ZValueMeta("z00", "Power", "%", 1.0, None, "measurement"),
-    ZValueMeta("z59", "Z-value z59 (unverified)", None, 1.0, None, None, enabled_by_default=False, duplicate_of="z00"),
+    ZValueMeta("z59", "Power (z59)", None, 1.0, None, None, enabled_by_default=False, duplicate_of="z00"),
     ZValueMeta("z01", "Power Output", "kW", 10.0, "power", "measurement"),
 
     # Oxygen
@@ -137,9 +137,9 @@ Z_VALUE_METADATA: Final[tuple[ZValueMeta, ...]] = (
     ZValueMeta("z71", "Z-value z71 (unverified)", None, 1.0, None, None, enabled_by_default=False, duplicate_of="z24"),
 
     # O2 regulation reference values; physical units remain unverified.
-    ZValueMeta("z82", "Oxygen Low Regulation", None, 100.0, None, None),
-    ZValueMeta("z83", "Oxygen Mid Regulation", None, 100.0, None, None),
-    ZValueMeta("z84", "Oxygen High Regulation", None, 100.0, None, None),
+    ZValueMeta("z82", "Oxygen Low Regulation", "%", 100.0, None, None),
+    ZValueMeta("z83", "Oxygen Mid Regulation", "%", 100.0, None, None),
+    ZValueMeta("z84", "Oxygen High Regulation", "%", 100.0, None, None),
 
     # Hopper
     ZValueMeta("z18", "Hopper Content", "%", 1.0, None, "measurement"),
@@ -150,7 +150,6 @@ Z_VALUE_METADATA: Final[tuple[ZValueMeta, ...]] = (
 
     # Fan
     ZValueMeta("z121", "Fan Speed", "%", 1.0, None, "measurement"),
-    ZValueMeta("z96", "Z-value z96 (unverified)", None, 1.0, None, None, enabled_by_default=False),
 
     # Combustion chamber
     ZValueMeta("z123", "Combustion Chamber Pressure", "Pa", 1.0, "pressure", "measurement"),

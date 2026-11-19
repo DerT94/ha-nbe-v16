@@ -74,6 +74,15 @@ def raw_tcp_settings(options: dict) -> tuple[str, int, frozenset[str]]:
     return str(bind), port, clients
 
 
+async def validate_raw_tcp_listener(bind: str, port: int) -> None:
+    """Check whether the endpoint can be bound without accepting clients."""
+    server = await asyncio.start_server(
+        lambda _reader, writer: writer.close(), bind, port, start_serving=False
+    )
+    server.close()
+    await server.wait_closed()
+
+
 @dataclass(eq=False)
 class _RawPeer:
     reader: asyncio.StreamReader
@@ -209,7 +218,7 @@ class EP20Client:
         self._connection_lost = False
         self._forwarder: _RawTCPForwarder | None = None
 
-    async def start_forwarding(self, options: dict) -> None:
+    async def start_forwarding(self, options: dict) -> tuple[str, int] | None:
         """Open an explicitly enabled raw TCP listener before starting the reader."""
         if not options.get(CONF_RAW_TCP_ENABLED, False):
             return
@@ -219,6 +228,7 @@ class EP20Client:
             forwarder.accept, bind, port, limit=1024
         )
         self._forwarder = forwarder
+        return bind, port
 
     async def run(self) -> None:
         """Connect to the EP20 and read the UART stream indefinitely.
