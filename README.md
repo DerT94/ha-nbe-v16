@@ -17,7 +17,7 @@ To change the address of the **same EP20**, use the entry's **Reconfigure** acti
 
 ## Sensors and mapping confidence
 
-There are **25 sensors: 10 enabled by default, 15 disabled**. Twelve disputed fields are unitless, unscaled raw integers and disabled by default. Three further sensors are disabled duplicates. Existing registry choices are retained during updates.
+There are **27 sensors: 20 enabled by default, 7 disabled**. Four unresolved fields (z59, z71, z96, z158) remain unitless, unscaled raw integers and disabled by default. Three further sensors are disabled named duplicates. Existing registry choices are retained during updates.
 
 | Enabled sensor | Z-key | Unit / conversion |
 | --- | --- | --- |
@@ -28,11 +28,19 @@ There are **25 sensors: 10 enabled by default, 15 disabled**. Twelve disputed fi
 | Oxygen | z05 | %, raw ÷ 10 |
 | Hopper content | z18 | %, raw unchanged |
 | Total consumption | z159 | kg, raw unchanged |
-| Fan RPM | z96 | rpm, raw unchanged |
+| Drop shaft temperature | z03 | °C, raw ÷ 10 |
+| Power | z00 | %, raw unchanged |
+| Power output | z01 | kW, raw ÷ 10 |
+| Oxygen setpoint | z24 | %, raw ÷ 10 |
+| Oxygen low / mid / high regulation | z82 / z83 / z84 | Unit unresolved, raw ÷ 100 |
+| Fan speed | z121 | %, raw unchanged |
+| State duration | z111 | s, raw unchanged |
+| Phase time remaining | z41 | s, raw unchanged |
+| Operating state | z10 | Observed English state text; unknown codes retain their number |
 | Combustion chamber pressure | z123 | Pa, raw unchanged |
 | Substate | z40 | Existing English text; unknown codes retain their number |
 
-The remaining named mappings follow the historical reference, without a fresh independent validation. See [mapping evidence and compatibility](docs/mapping-evidence.md) for disputed keys, missing evidence and statistics implications. Do not infer a physical meaning or unit from a disputed raw field. German and English sensor names are provided; native status values remain unchanged to preserve automation comparisons.
+Eight restored fields match named references across 40 local paired snapshots; state duration follows the observed main-state transitions. Power %, output kW, hopper %, fan % and pressure Pa are adopted with the user’s agreement and historical context; O2 regulation units remain unset. Main state and phase time remaining extend the earlier state/timer observations. Historical tests remain evidence; other existing mappings and status texts retain their behavior and documented verification gaps. See [mapping evidence and compatibility](docs/mapping-evidence.md) for disputed keys, missing evidence and statistics implications. Do not infer a physical meaning or unit from a disputed raw field. German and English sensor names are provided; native status values remain unchanged to preserve automation comparisons.
 
 ## Update and remove
 

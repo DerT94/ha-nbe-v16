@@ -46,7 +46,7 @@
         "name": "Boiler Temperature (z60)"
       },
       "z03": {
-        "name": "Z-value z03 (unverified)"
+        "name": "Drop Shaft Temperature"
       },
       "z04": {
         "name": "Flue Gas Temperature"
@@ -58,13 +58,13 @@
         "name": "Outdoor Temperature"
       },
       "z00": {
-        "name": "Z-value z00 (unverified)"
+        "name": "Power"
       },
       "z59": {
         "name": "Z-value z59 (unverified)"
       },
       "z01": {
-        "name": "Z-value z01 (unverified)"
+        "name": "Power Output"
       },
       "z05": {
         "name": "Oxygen"
@@ -73,19 +73,19 @@
         "name": "Oxygen (z70)"
       },
       "z24": {
-        "name": "Z-value z24 (unverified)"
+        "name": "Oxygen Setpoint"
       },
       "z71": {
         "name": "Z-value z71 (unverified)"
       },
       "z82": {
-        "name": "Z-value z82 (unverified)"
+        "name": "Oxygen Low Regulation"
       },
       "z83": {
-        "name": "Z-value z83 (unverified)"
+        "name": "Oxygen Mid Regulation"
       },
       "z84": {
-        "name": "Z-value z84 (unverified)"
+        "name": "Oxygen High Regulation"
       },
       "z18": {
         "name": "Hopper Content"
@@ -97,19 +97,25 @@
         "name": "Consumption Total"
       },
       "z121": {
-        "name": "Z-value z121 (unverified)"
+        "name": "Fan Speed"
       },
       "z96": {
-        "name": "Fan RPM"
+        "name": "Z-value z96 (unverified)"
       },
       "z123": {
         "name": "Combustion Chamber Pressure"
       },
       "z111": {
-        "name": "Z-value z111 (unverified)"
+        "name": "State Duration"
       },
       "z40": {
         "name": "Substate"
+      },
+      "z10": {
+        "name": "Operating State"
+      },
+      "z41": {
+        "name": "Phase Time Remaining"
       }
     }
   }

@@ -74,6 +74,14 @@ class ZValueMeta:
     """Optional int→string lookup table for enum/status Z-values."""
 
 
+# Only observed main-state codes are named; unknown codes retain their number.
+_STATE_LOOKUP: Final[dict[int, str]] = {
+    2: "Ignition 1",
+    5: "Running",
+    24: "Stopped by external contact",
+}
+
+
 _SUBSTATE_LOOKUP: Final[dict[int, str]] = {
     2: "Ignition preheat",
     6: "Extinguish and cool",
@@ -99,33 +107,34 @@ _SUBSTATE_LOOKUP: Final[dict[int, str]] = {
 }
 
 
-# Disputed mappings use unitless raw integers until independent evidence is
-# available. See docs/mapping-evidence.md for scope and statistics implications.
+# Named reference matches establish scaling; unresolved units retain no unit
+# or state class. Unresolved mappings remain disabled raw integers.
+# See docs/mapping-evidence.md for evidence and statistics implications.
 Z_VALUE_METADATA: Final[tuple[ZValueMeta, ...]] = (
     # Temperatures
     ZValueMeta("z02", "Boiler Temperature", "°C", 10.0, "temperature", "measurement"),
     ZValueMeta("z50", "Boiler Temperature (z50)", "°C", 10.0, "temperature", "measurement", enabled_by_default=False, duplicate_of="z02"),
     ZValueMeta("z60", "Boiler Temperature (z60)", "°C", 10.0, "temperature", "measurement", enabled_by_default=False, duplicate_of="z02"),
-    ZValueMeta("z03", "Z-value z03 (unverified)", None, 1.0, None, None, enabled_by_default=False),
+    ZValueMeta("z03", "Drop Shaft Temperature", "°C", 10.0, "temperature", "measurement"),
     ZValueMeta("z04", "Flue Gas Temperature", "°C", 10.0, "temperature", "measurement"),
     ZValueMeta("z25", "Boiler Setpoint", "°C", 10.0, "temperature", "measurement"),
     ZValueMeta("z124", "Outdoor Temperature", "°C", 10.0, "temperature", "measurement"),
 
     # Power
-    ZValueMeta("z00", "Z-value z00 (unverified)", None, 1.0, None, None, enabled_by_default=False),
+    ZValueMeta("z00", "Power", "%", 1.0, None, "measurement"),
     ZValueMeta("z59", "Z-value z59 (unverified)", None, 1.0, None, None, enabled_by_default=False, duplicate_of="z00"),
-    ZValueMeta("z01", "Z-value z01 (unverified)", None, 1.0, None, None, enabled_by_default=False),
+    ZValueMeta("z01", "Power Output", "kW", 10.0, "power", "measurement"),
 
     # Oxygen
     ZValueMeta("z05", "Oxygen", "%", 10.0, None, "measurement"),
     ZValueMeta("z70", "Oxygen (z70)", "%", 10.0, None, "measurement", enabled_by_default=False, duplicate_of="z05"),
-    ZValueMeta("z24", "Z-value z24 (unverified)", None, 1.0, None, None, enabled_by_default=False),
+    ZValueMeta("z24", "Oxygen Setpoint", "%", 10.0, None, "measurement"),
     ZValueMeta("z71", "Z-value z71 (unverified)", None, 1.0, None, None, enabled_by_default=False, duplicate_of="z24"),
 
-    # O2 regulation thresholds
-    ZValueMeta("z82", "Z-value z82 (unverified)", None, 1.0, None, None, enabled_by_default=False),
-    ZValueMeta("z83", "Z-value z83 (unverified)", None, 1.0, None, None, enabled_by_default=False),
-    ZValueMeta("z84", "Z-value z84 (unverified)", None, 1.0, None, None, enabled_by_default=False),
+    # O2 regulation reference values; physical units remain unverified.
+    ZValueMeta("z82", "Oxygen Low Regulation", None, 100.0, None, None),
+    ZValueMeta("z83", "Oxygen Mid Regulation", None, 100.0, None, None),
+    ZValueMeta("z84", "Oxygen High Regulation", None, 100.0, None, None),
 
     # Hopper
     ZValueMeta("z18", "Hopper Content", "%", 1.0, None, "measurement"),
@@ -135,16 +144,19 @@ Z_VALUE_METADATA: Final[tuple[ZValueMeta, ...]] = (
     ZValueMeta("z159", "Consumption Total", "kg", 1.0, None, "total_increasing"),
 
     # Fan
-    ZValueMeta("z121", "Z-value z121 (unverified)", None, 1.0, None, None, enabled_by_default=False),
-    ZValueMeta("z96", "Fan RPM", "rpm", 1.0, None, "measurement"),
+    ZValueMeta("z121", "Fan Speed", "%", 1.0, None, "measurement"),
+    ZValueMeta("z96", "Z-value z96 (unverified)", None, 1.0, None, None, enabled_by_default=False),
 
     # Combustion chamber
     ZValueMeta("z123", "Combustion Chamber Pressure", "Pa", 1.0, "pressure", "measurement"),
 
-    # Cycle timer
-    ZValueMeta("z111", "Z-value z111 (unverified)", None, 1.0, None, None, enabled_by_default=False),
+    # Main-state timer; capture timestamps have a small observed offset.
+    ZValueMeta("z111", "State Duration", "s", 1.0, "duration", "measurement"),
+    # Observed during ignition and cooling; zero also occurs outside a countdown.
+    ZValueMeta("z41", "Phase Time Remaining", "s", 1.0, "duration", "measurement"),
 
     # Status / Enum
+    ZValueMeta("z10", "Operating State", None, 1.0, None, None, lookup=_STATE_LOOKUP),
     ZValueMeta("z40", "Substate", None, 1.0, None, None, lookup=_SUBSTATE_LOOKUP),
 )
 

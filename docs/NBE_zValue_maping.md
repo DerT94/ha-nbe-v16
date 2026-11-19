@@ -1,5 +1,11 @@
 # NBE V16 – Z-Wert Mapping
 
+> Historische Test- und Mapping-Evidenz; die ursprünglichen Beobachtungen bleiben
+> erhalten. Ergänzungen und gezielte Neubewertungen einzelner Hypothesen vom
+> 19.11.2026 sowie der aktuelle Implementierungsstand stehen in der
+> [Mapping-Evidenz](mapping-evidence.md). Eine konstante neue Messung hebt
+> frühere dynamische Tests nicht auf.
+
 ***
 
 ## ✅ Sicher zugewiesene Z-Werte
