@@ -11,7 +11,7 @@ A local, read-only integration for the NBE V16 pellet boiler through the EP20 UA
 3. Restart Home Assistant to discover the custom integration.
 4. Open **Settings → Devices & services → Add integration → NBE V16 Pellet Boiler** and enter the existing EP20 IP address and TCP port.
 
-The check proves TCP reachability only. Sensors remain unavailable until valid measurements arrive. The EP20 must already expose the UART stream as a TCP server; the integration does not reconfigure it. No YAML configuration, cloud account or extra Python runtime package is needed. These instructions do not authorize an agent to deploy files or restart HA.
+The check proves TCP reachability only. Sensors remain unavailable until valid measurements arrive. The EP20 must already expose the UART stream as a TCP server; the integration does not reconfigure it. No YAML configuration, cloud account or extra Python runtime package is needed.
 
 To change the address of the **same EP20**, use the entry's **Reconfigure** action. It updates the endpoint and reloads the same entry, preserving its entry ID and sensor unique IDs. An endpoint assigned to another entry is rejected. This does not authenticate a replacement physical device; the stream's `mac` parameter is not treated as a verified Ethernet MAC address.
 
