@@ -20,7 +20,13 @@ param(
     [string]$BaseUrl        = "https://stokercloud.dk/v16bckbeta/dataout2",
     [string]$OutDir         = $PSScriptRoot,
     [int]   $Frames         = 10,
-    [int]   $MinIntervalSec = 120
+    [int]   $MinIntervalSec = 120,
+    [ValidateRange(1, 2147483)]
+    [int]   $ReadTimeoutSec = 180,
+    [ValidateRange(1, 2147483)]
+    [int]   $ConnectTimeoutSec = 15,
+    [ValidateRange(1, 3600)]
+    [int]   $ReconnectDelaySec = 10
 )
 
 $ErrorActionPreference = "Stop"
@@ -66,6 +72,49 @@ function Get-Token {
 function Save-Snapshots {
     param($list, $path)
     $list | ConvertTo-Json -Depth 15 | Out-File $path -Encoding UTF8
+}
+
+function New-CollectorConnection {
+    param($HostName, $Port, $ConnectTimeoutSec, $ReadTimeoutSec)
+    $client = [System.Net.Sockets.TcpClient]::new()
+    try {
+        $pending = $client.ConnectAsync($HostName, $Port)
+        if (-not $pending.Wait($ConnectTimeoutSec * 1000)) {
+            throw [System.TimeoutException]::new('TCP connect timeout')
+        }
+        $pending.GetAwaiter().GetResult()
+        $networkStream = $client.GetStream()
+        $networkStream.ReadTimeout = $ReadTimeoutSec * 1000
+        return @{ Client = $client; Stream = $networkStream }
+    } catch {
+        $client.Dispose()
+        throw
+    }
+}
+
+function Read-CollectorBytes {
+    param($State, $Buffer, $HostName, $Port,
+          $ConnectTimeoutSec, $ReadTimeoutSec, $ReconnectDelaySec)
+    while ($true) {
+        try {
+            if ($null -eq $State.Connection) {
+                Write-Host '      TCP-Verbindung wird aufgebaut...' -ForegroundColor DarkGray
+                $State.Connection = New-CollectorConnection -HostName $HostName -Port $Port `
+                    -ConnectTimeoutSec $ConnectTimeoutSec -ReadTimeoutSec $ReadTimeoutSec
+                Write-Host "      TCP verbunden (Lese-Timeout: ${ReadTimeoutSec}s)." -ForegroundColor DarkGray
+            }
+            $count = $State.Connection.Stream.Read($Buffer, 0, $Buffer.Length)
+            if ($count -eq 0) { throw [System.IO.EndOfStreamException]::new() }
+            return $count
+        } catch {
+            # Never carry an incomplete frame into a different TCP connection.
+            if ($null -ne $State.Connection) { $State.Connection.Client.Dispose() }
+            $State.Connection = $null
+            $State.FrameLines.Clear()
+            Write-Warning "TCP-Lesen/Verbindungsaufbau fehlgeschlagen oder EOF (Lese-Timeout: ${ReadTimeoutSec}s). Reconnect in ${ReconnectDelaySec}s; Snapshots bleiben erhalten."
+            Start-Sleep -Seconds $ReconnectDelaySec
+        }
+    }
 }
 
 function Resolve-Name($key) {
@@ -116,8 +165,6 @@ Write-Host "      Gespeichert: $fileMenudata" -ForegroundColor Green
 
 # Schritt 3: TCP verbinden und Frames sammeln
 Write-Host "[3/3] Verbinde TCP ${TcpHost}:$TcpPort ..." -ForegroundColor Cyan
-$tcp    = [System.Net.Sockets.TcpClient]::new($TcpHost, $TcpPort)
-$stream = $tcp.GetStream()
 $buffer = New-Object byte[] 4096
 
 $frameLines   = [System.Collections.Generic.List[string]]::new()
@@ -125,13 +172,17 @@ $snapshots    = [System.Collections.Generic.List[object]]::new()
 $frameCount   = 0
 $lastSnapshot = [DateTime]::MinValue
 $lastZvals    = $null
+$connectionState = @{ Connection = $null; FrameLines = $frameLines }
 
 Write-Host "      Warte auf $Frames Frames (Mindestabstand: ${MinIntervalSec}s)..." -ForegroundColor Cyan
 Write-Host ""
 
+try {
 while ($frameCount -lt $Frames) {
-    $bytesRead = $stream.Read($buffer, 0, $buffer.Length)
-    if ($bytesRead -eq 0) { Write-Warning "TCP-Verbindung getrennt."; break }
+    $bytesRead = Read-CollectorBytes -State $connectionState -Buffer $buffer `
+        -HostName $TcpHost -Port $TcpPort -ConnectTimeoutSec $ConnectTimeoutSec `
+        -ReadTimeoutSec $ReadTimeoutSec -ReconnectDelaySec $ReconnectDelaySec
+    $stream = $connectionState.Connection.Stream
 
     # IAC abhandeln
     $cleanBytes = [System.Collections.Generic.List[byte]]::new()
@@ -262,7 +313,11 @@ while ($frameCount -lt $Frames) {
     }
 }
 
-$tcp.Close()
+} finally {
+    if ($null -ne $connectionState.Connection) {
+        $connectionState.Connection.Client.Dispose()
+    }
+}
 
 Write-Host ""
 Write-Host "Fertig! $($snapshots.Count) Snapshots gesammelt." -ForegroundColor Green

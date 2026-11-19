@@ -5,7 +5,14 @@ __pycache__/
 *.pyd
 .Python
 .venv/
+venv/
 env/
+
+# Local environment / credentials
+.env
+.env.*
+!.env.example
+!.env.sample
 
 # Home Assistant
 *.log
@@ -23,15 +30,28 @@ ip_bans.yaml
 *.swp
 *.swo
 .DS_Store
+Thumbs.db
+Desktop.ini
 .idea/
 
 # Testing & Dev
+/docs/local-abnahme/
 .pytest_cache/
 htmlcov/
 .coverage
+.coverage.*
+coverage.xml
 .tox/
+.nox/
 .mypy_cache/
+.ruff_cache/
+
+# Local data collector output (tools/collect_stokercloud_data.ps1)
+/tools/[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]_[0-9][0-9][0-9][0-9][0-9][0-9]/
 
 #AI
+/handoff/
+AGENTS.md
+.agents/
 .continue/
 .continueignore

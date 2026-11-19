@@ -10,6 +10,17 @@ acceptance procedure. Their networking behavior has not been made passive.
 | `listen_http.ps1` | Opens a listener on all interfaces and sends HTTP responses; its instructions assume changing the EP20 HTTP target. | Displays decoded headers/body rather than storing the original TCP stream. |
 | `collect_stokercloud_data.ps1` | Contacts Stokercloud and the configured TCP endpoint; sends Telnet negotiation replies. | Splits each TCP chunk into lines without retaining the partial last line. Reconstructed frames can therefore depend on TCP fragmentation. |
 
+The collector now reconnects after a TCP read timeout, EOF, or a connection/read
+failure. `-ReadTimeoutSec` defaults to 180 seconds without received TCP bytes,
+`-ConnectTimeoutSec` to 15 seconds, and `-ReconnectDelaySec` to 10 seconds.
+Retries continue until the requested snapshot count is reached or the script is
+stopped. Incomplete frame lines are discarded on reconnect; saved snapshots,
+snapshot numbering, and the minimum snapshot interval are retained. The current
+client is disposed when collection exits. These limits apply to TCP transport,
+not to cloud calls or the time to assemble a complete frame while bytes continue
+arriving. An already running copy must be restarted to use this change; it does
+not automatically resume snapshots from an earlier process/session.
+
 The collector's reconstructed frames must not be used as protocol fixtures or as
 proof of UART line boundaries. Before any future use as an evidence source, it
 would need complete buffering of partial lines and split Telnet sequences, tests
