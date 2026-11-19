@@ -2,12 +2,12 @@
 
 A local, read-only integration for NBE V16 pellet boilers through the EP20 UART stream over TCP. It sends no application data, Telnet replies or boiler commands and makes no cloud requests. Each configured endpoint has its own connection, coordinator and sensors.
 
-**Beta candidate 0.1.1b1**, minimum Home Assistant Core **2026.11.2**. Functional acceptance on HA 2026.11.2 / Python 3.14.10 covered setup/unload, shutdown and restart, disconnect/reconnect, stale measurements, developer mode, Recorder and TCP forwarding. Long-term observation and visual dialog verification remain open. This candidate is not a production release. See the [changelog](CHANGELOG.md).
+**Beta candidate 0.1.1b2**, minimum Home Assistant Core **2026.10.1**. The lower minimum permits compatibility testing on 2026.10.1; it is not a completed acceptance claim. Functional acceptance on HA 2026.11.2 / Python 3.14.10 covered setup/unload, shutdown and restart, disconnect/reconnect, stale measurements, developer mode, Recorder and TCP forwarding. Long-term observation and visual verification of the loaded beta remain open. This candidate is not a production release. See the [changelog](CHANGELOG.md).
 
 ## Install and configure
 
 1. Obtain a reviewed revision of this repository.
-2. Create `custom_components/nbe_v16/` in your HA configuration directory. Copy the repository's root `.py` files, `manifest.json`, `strings.json` and `translations/` there.
+2. Create `custom_components/nbe_v16/` in your HA configuration directory. Copy the repository's root `.py` files, `manifest.json`, `strings.json`, `translations/` and `brand/` there.
 3. Restart Home Assistant.
 4. Open **Settings → Devices & services → Add integration → NBE V16 Pellet Boiler** and enter the EP20 address and TCP port, normally 23.
 

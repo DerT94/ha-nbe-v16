@@ -1,6 +1,6 @@
 # Compatibility and existing installations
 
-The current beta declares Home Assistant Core 2026.11.2 as its minimum version. The [changelog](../CHANGELOG.md) records candidate-specific changes and acceptance limits. These notes describe effects relevant when moving from earlier development revisions.
+The current beta declares Home Assistant Core 2026.10.1 as its minimum version to permit compatibility testing on that version. The relevant config-entry and coordinator APIs are present in HA 2026.10.1; full runtime acceptance on that version is still pending. Previous functional acceptance used HA 2026.11.2 / Python 3.14.10 and does not establish acceptance on older versions. The [changelog](../CHANGELOG.md) records candidate-specific changes and acceptance limits. These notes describe effects relevant when moving from earlier development revisions.
 
 ## Entity identity
 
